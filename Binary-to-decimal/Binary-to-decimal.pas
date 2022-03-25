@@ -25,7 +25,7 @@ while wrong>1 do
 
   if wrong>1 then
     begin
-    write('Invalid number entered, re-enter: '); readln(s);
+    write('Invalid binary entered, re-enter: '); readln(s);
     end;
   end;
 
