@@ -45,7 +45,8 @@ for i:=1 to length(s) do
     begin
     dec(u); cnt:=1;
     binary:=binary + StrToInt(s[i])*(exp(u*ln(2)));
-
+    
+    digit:=FloatToStr(binary);
     if length(digit)>length(digit_pre) then digit_pre:=FloatToStr(binary);
     end;
   end;
