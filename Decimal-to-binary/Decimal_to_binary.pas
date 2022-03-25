@@ -95,7 +95,7 @@ end;
 
 begin
 clrscr;
-write('Nhap so can chuyen doi: '); readln(s);
+write('Enter the decimal to convert: '); readln(s);
 
 wrong:=2;
 while wrong>1 do
@@ -113,11 +113,11 @@ while wrong>1 do
 
   if wrong>1 then
     begin
-    write('So da nhap khong hop le, hay nhap lai: '); readln(s);
+    write('Invalid decimal entered, re-enter: '); readln(s);
     end;
   end;
 
-writeln(sLineBreak,'Chuyen sang ma nhi phan:');
+writeln(sLineBreak,'Convert to binary code:');
 
 if decimal=true then
   begin
