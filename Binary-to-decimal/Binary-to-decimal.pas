@@ -7,7 +7,7 @@ var s,digit,digit_pre:string;
 
 begin
 clrscr;
-write('Nhap ma nhi phan can chuyen doi: '); readln(s);
+write('Enter the binary to convert: '); readln(s);
 
 wrong:=2;
 while wrong>1 do
@@ -25,11 +25,11 @@ while wrong>1 do
 
   if wrong>1 then
     begin
-    write('So da nhap khong hop le, hay nhap lai: '); readln(s);
+    write('Invalid number entered, re-enter: '); readln(s);
     end;
   end;
 
-writeln(sLineBreak,'Chuyen sang so thap phan:');
+writeln(sLineBreak,'Convert to decimal: ');
 
 for i:=1 to length(s) do
   begin
