@@ -1,4 +1,4 @@
-# Decimal-Binary_Converter
+# Decimal and Binary Converter
 A decimal/binary converter, code in pascal with low accuracy.
 
 ## Why do I create this repository ?
