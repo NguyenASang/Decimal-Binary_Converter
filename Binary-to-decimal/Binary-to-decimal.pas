@@ -111,7 +111,7 @@ end;
 
 begin
 clrscr;
-write('Enter the binary to convert:  '); readln(s);
+write('Enter the binary to convert: '); readln(s);
 
 wrong:=2;
 while wrong>1 do
@@ -129,7 +129,7 @@ while wrong>1 do
 
   if wrong>1 then
     begin
-    write('Invaild binary entered, re-enter: '); readln(s);
+    write('Invalid binary entered, re-enter: '); readln(s);
     end;
   end;
 
