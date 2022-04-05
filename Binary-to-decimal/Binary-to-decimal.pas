@@ -124,7 +124,7 @@ while wrong>1 do
       inc(wrong); decimal:=true;
       end;
 
-    if (s[i] in ['a'..'z']) or (s[i] in ['A'..'Z']) or (s[i] in ['2'..'9']) or (s[i]=',') then inc(wrong);
+    if (s[i]<>'.') and (s[i]<>'0') and (s[i]<>'1') then inc(wrong);
     end;
 
   if wrong>1 then
