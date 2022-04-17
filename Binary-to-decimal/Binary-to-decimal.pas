@@ -10,7 +10,7 @@ begin
 num_str:=concat(FloatToStr(num),'.');
 u:=0; digit_sum:='0.0'; w:=0; res:='';
 
-for i:=sep+1 to length(s)-1 do
+for i:=sep+1 to length(s) do
   begin
   if length(res) = 0 then dividend:='1'
   else begin
@@ -68,82 +68,91 @@ for i:=sep+1 to length(s)-1 do
     if w+1 > length(dividend) then
       begin
       cnt:=0;
+
       for w:=1 to length(res) do
         begin
         if res[w] = '.' then inc(cnt);
         end;
 
-      if cnt = 0 then res:='0.5';
+      if cnt = 0 then
+        begin
+        for w:=length(res) downto 2 do res:=concat(res,res[w]);
+        res[2]:='.';
+        end;
+
       esc:=true;
       end;
     end;
 
-  digit_plus:=res;
-
-  if length(result) > 0 then
+  if s[i] <> '0' then
     begin
-    digit_sum:=result; result:='';
-    end;
+    digit_plus:=res;
 
-  if length(digit_plus) > length(digit_sum) then
+    if length(result) > 0 then
       begin
-      for e:=length(digit_sum) to length(digit_plus)-1 do digit_sum:=concat(digit_sum,'0');
+      digit_sum:=result; result:='';
       end;
 
-  if length(digit_plus) < length(digit_sum) then
-    begin
-    for e:=length(digit_plus) to length(digit_sum)-1 do digit_plus:=concat(digit_plus,'0');
-    end;
-
-  remem:=false;
-  for e:=length(digit_sum) downto 1 do
-    begin
-    if (digit_sum[e] <> '.') and (digit_plus[e] <> '.') then
+    if length(digit_plus) > length(digit_sum) then
       begin
-      if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) < 10 then
+        for e:=length(digit_sum) to length(digit_plus)-1 do digit_sum:=concat(digit_sum,'0');
+        end;
+
+    if length(digit_plus) < length(digit_sum) then
+      begin
+      for e:=length(digit_plus) to length(digit_sum)-1 do digit_plus:=concat(digit_plus,'0');
+      end;
+
+    remem:=false;
+    for e:=length(digit_sum) downto 1 do
+      begin
+      if (digit_sum[e] <> '.') and (digit_plus[e] <> '.') then
         begin
-        if remem=true then
+        if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) < 10 then
           begin
-
-          if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
+          if remem=true then
             begin
-            result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1) mod 10),result);
-            remem:=true
+
+            if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
+              begin
+              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1) mod 10),result);
+              remem:=true
+              end
+
+            else begin
+              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1),result);
+              remem:=false;
+              end;
             end
 
-          else begin
-            result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1),result);
-            remem:=false;
-            end;
-          end
-
-        else result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])),result);
-        end
-
-      else begin
-        if remem=true then
-          begin
-          if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
-            begin
-            result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1) mod 10),result);
-            remem:=true
-            end
-
-          else begin
-            result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1),result);
-            remem:=false;
-            end;
+          else result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])),result);
           end
 
         else begin
-          result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])) mod 10),result);
+          if remem=true then
+            begin
+            if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
+              begin
+              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1) mod 10),result);
+              remem:=true
+              end
+
+            else begin
+              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1),result);
+              remem:=false;
+              end;
+            end
+
+          else begin
+            result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])) mod 10),result);
+            end;
+
+          remem:=true;
           end;
-
-        remem:=true;
         end;
-      end;
 
-    if (digit_sum[e]='.') and (digit_plus[e]='.') then result:=concat('.',result);
+      if (digit_sum[e]='.') and (digit_plus[e]='.') then result:=concat('.',result);
+      end;
     end;
   end;
 
@@ -163,7 +172,7 @@ while wrong > 1 do
     begin
     if s[i] = '.' then
       begin
-      inc(wrong); 
+      inc(wrong);
       decimal:=true;
       end;
 
