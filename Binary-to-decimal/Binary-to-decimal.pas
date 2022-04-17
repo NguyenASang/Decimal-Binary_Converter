@@ -1,133 +1,176 @@
-uses crt,math,sysutils;
-var s,result,num_str,digit_sum,digit_plus,dividend,divisor:ansistring;
-    i,u,e,wrong,sep,cnt,rest:longint;
+uses crt,sysutils;
+var s,result,res,num_str,digit_sum,digit_plus,dividend,divisor:ansistring;
+    i,u,e,wrong,sep,cnt,w:longint;
     num:extended;
     a:array[1..100000000] of longint;
-    decimal,remem:boolean;
+    decimal,remem,esc:boolean;
 
 procedure deci;
 begin
 num_str:=concat(FloatToStr(num),'.');
-u:=0; digit_sum:='0.0';
-for i:=sep+1 to length(s) do
+u:=0; digit_sum:='0.0'; w:=0; res:='';
+
+for i:=sep+1 to length(s)-1 do
   begin
-  inc(u);
-  if s[i]<>'0' then
+  if length(res) = 0 then dividend:='1'
+  else begin
+    dividend:=res; res:='';
+    end;
+
+  remem:=false; w:=0; esc:=false;
+  while esc = false do
     begin
+    inc(w);
 
-    dividend:='1';
-    divisor:=IntToStr(round(exp(u*ln(2))));
-    digit_plus:='0.';
-    rest:=1;
+    if dividend[w] <> '.' then
+      begin
+      if StrToInt(dividend[w]) mod 2 <> 0 then
+        begin
+        if remem=false then
+          begin
+          res:=concat(res,IntToStr(StrToInt(dividend[w]) div 2)); remem:=true;
+          if w = length(dividend) then dividend:=concat(dividend,'1');
+          end
 
-    while rest<>0 do
+        else begin
+          if w <> length(dividend) then
+            begin
+            res:=concat(res,IntToStr((10 + StrToInt(dividend[w])) div 2));
+            if (10 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            end
+
+          else begin
+            res:=concat(res,IntToStr((9 + StrToInt(dividend[w])) div 2));
+            if (9 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            end;
+          end;
+        end
+
+      else begin
+        if remem = false then res:=concat(res,IntToStr(StrToInt(dividend[w]) div 2))
+        else begin
+          if w <> length(dividend) then
+            begin
+            res:=concat(res,IntToStr((10 + StrToInt(dividend[w])) div 2));
+            if (10 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            end
+
+          else begin
+            res:=concat(res,IntToStr((9 + StrToInt(dividend[w])) div 2));
+            if (9 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            end;
+          end;
+        end;
+      end;
+
+    if dividend[w] = '.' then res:=concat(res,'.');
+
+    if w+1 > length(dividend) then
       begin
       cnt:=0;
-      while StrToInt(dividend)<StrToInt(divisor) do
+      for w:=1 to length(res) do
         begin
-        inc(cnt); dividend:=concat(dividend,'0');
-        if cnt>1 then digit_plus:=concat(digit_plus,'0');
+        if res[w] = '.' then inc(cnt);
         end;
 
-      digit_plus:=concat(digit_plus,IntToStr(StrToInt(dividend) div StrToInt(divisor)));
-      rest:=StrToInt(dividend) mod StrToInt(divisor);
-      dividend:=IntToStr(rest);
+      if cnt = 0 then res:='0.5';
+      esc:=true;
       end;
+    end;
 
+  digit_plus:=res;
 
-    if length(result)>0 then
-      begin
-      digit_sum:=result;
-      result:='';
-      end;
+  if length(result) > 0 then
+    begin
+    digit_sum:=result; result:='';
+    end;
 
-    if length(digit_plus)>length(digit_sum) then
+  if length(digit_plus) > length(digit_sum) then
       begin
       for e:=length(digit_sum) to length(digit_plus)-1 do digit_sum:=concat(digit_sum,'0');
       end;
 
-    if length(digit_plus)<length(digit_sum) then
-      begin
-      for e:=length(digit_plus) to length(digit_sum)-1 do digit_plus:=concat(digit_plus,'0');
-      end;
+  if length(digit_plus) < length(digit_sum) then
+    begin
+    for e:=length(digit_plus) to length(digit_sum)-1 do digit_plus:=concat(digit_plus,'0');
+    end;
 
-    remem:=false;
-    for e:=length(digit_sum) downto 1 do
+  remem:=false;
+  for e:=length(digit_sum) downto 1 do
+    begin
+    if (digit_sum[e] <> '.') and (digit_plus[e] <> '.') then
       begin
-      if (digit_sum[e]<>'.') and (digit_plus[e]<>'.') then
+      if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) < 10 then
         begin
-        if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])<10 then
+        if remem=true then
           begin
-          if remem=true then
+
+          if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
             begin
-
-            if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1>9 then
-              begin
-              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1) mod 10),result);
-              remem:=true
-              end
-
-            else begin
-              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1),result);
-              remem:=false;
-              end;
-            end
-
-          else result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])),result);
-          end
-
-        else begin
-          if remem=true then
-            begin
-            if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1>9 then
-              begin
-              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1) mod 10),result);
-              remem:=true
-              end
-
-            else begin
-              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1),result);
-              remem:=false;
-              end;
+            result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1) mod 10),result);
+            remem:=true
             end
 
           else begin
-            result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])) mod 10),result);
+            result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1),result);
+            remem:=false;
             end;
+          end
 
-          remem:=true;
+        else result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])),result);
+        end
+
+      else begin
+        if remem=true then
+          begin
+          if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
+            begin
+            result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1) mod 10),result);
+            remem:=true
+            end
+
+          else begin
+            result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])+1),result);
+            remem:=false;
+            end;
+          end
+
+        else begin
+          result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])) mod 10),result);
           end;
-        end;
 
-      if (digit_sum[e]='.') and (digit_plus[e]='.') then result:=concat('.',result);
+        remem:=true;
+        end;
       end;
+
+    if (digit_sum[e]='.') and (digit_plus[e]='.') then result:=concat('.',result);
     end;
   end;
 
-write(round(num));
 for i:=2 to length(result) do write(result[i]);
 end;
 
 
 begin
 clrscr;
-write('Enter the binary to convert: '); readln(s);
+write('Enter the binary to convert:  '); readln(s);
 
 wrong:=2;
-while wrong>1 do
+while wrong > 1 do
   begin
   wrong:=0; decimal:=false;
   for i:=1 to length(s) do
     begin
-    if s[i]='.' then
+    if s[i] = '.' then
       begin
-      inc(wrong); decimal:=true;
+      inc(wrong); 
+      decimal:=true;
       end;
 
-    if (s[i]<>'.') and (s[i]<>'0') and (s[i]<>'1') then inc(wrong);
+    if (s[i] <> '.') and (s[i] <> '0') and (s[i] <> '1') then inc(wrong);
     end;
 
-  if wrong>1 then
+  if wrong > 1 then
     begin
     write('Invalid binary entered, re-enter: '); readln(s);
     end;
@@ -137,31 +180,21 @@ writeln(sLineBreak,'Convert to decimal: ');
 
 for i:=1 to length(s) do
   begin
-  if s[i]='.' then sep:=i;
+  if s[i] = '.' then sep:=i;
   end;
 
+if decimal = true then u:=sep-1 else u:=length(s);
 
-
-if decimal=true then
+num:=0;
+for i:=1 to u do
   begin
-  u:=sep-1;
-  for i:=1 to u do
-    begin
-    dec(u);
-    num:=num + StrToInt(s[i])*(exp(u*ln(2)));
-    end;
-  deci;
-  end
-
-else begin
-  num:=0; u:=length(s);
-  for i:=1 to u do
-    begin
-    dec(u);
-    num:=num + StrToInt(s[i])*(exp(u*ln(2)));
-    end;
-  write(num:0:0);
+  dec(u);
+  num:=num + StrToInt(s[i])*(exp(u*ln(2)));
   end;
+
+write(num:0:0);
+
+if decimal = true then deci;
 
 readln;
 end.
