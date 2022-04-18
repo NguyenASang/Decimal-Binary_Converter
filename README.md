@@ -1,5 +1,11 @@
-# Decimal and Binary Converter
-A decimal/binary converter, code in pascal with ~low accuracy~ high accuracy.
+## About this Converter
+This is a decimal/binary converter, code in _pascal_.
+
+Here is the status:
+| Converter | Accuration |
+|:---------:|:------:|
+| [Binary -> Decimal](https://github.com/NguyenASang/Decimal-Binary_Converter/releases/download/v1.0.1/binary_to_number.exe) | 100% |
+| [Decimal -> Binary](https://github.com/NguyenASang/Decimal-Binary_Converter/releases/download/v1.0.1/number_to_binary.exe) | 20% |
 
 ## Why do I create this repository ?
-I create this to improve the accuracy of this "Decimal/Binary Converter" tool. If you want to open a PR or report bugs feel free to do it.
+I create this to improve the accuracy of this Converter. If you want to open a PR or report bugs feel free to do it.
