@@ -1,13 +1,12 @@
 uses crt,sysutils;
-var s,result,res,num_str,digit_sum,digit_plus,dividend,divisor:ansistring;
-    i,u,e,wrong,sep,cnt,w:longint;
-    num:extended;
+var s,result,res,num_str,digit_sum,digit_plus,dividend,divisor,pow,sum_pow,ano_sum_pow,num:ansistring;
+    e,f,i,u,t,w,cnt,sep,wrong:longint;
     a:array[1..100000000] of longint;
-    decimal,remem,esc:boolean;
+    decimal,esc,remem:boolean;
 
 procedure deci;
 begin
-num_str:=concat(FloatToStr(num),'.');
+num_str:=concat(num,'.');
 u:=0; digit_sum:='0.0'; w:=0; res:='';
 
 for i:=sep+1 to length(s) do
@@ -194,14 +193,115 @@ for i:=1 to length(s) do
 
 if decimal = true then u:=sep-1 else u:=length(s);
 
-num:=0;
-for i:=1 to u do
+w:=u; num:='0';
+for i:=0 to u-1 do
   begin
-  dec(u);
-  num:=num + StrToInt(s[i])*(exp(u*ln(2)));
+  dec(w);
+
+  if s[i+1] <> '0' then
+    begin
+    cnt:=w; pow:='1'; sum_pow:='';
+
+    for t:=1 to cnt do
+      begin
+      if length(sum_pow) > 0 then
+        begin
+        pow:=sum_pow; sum_pow:='';
+        end;
+
+      remem:=false;
+      for f:=length(pow) downto 1 do
+        begin
+        inc(cnt);
+        if StrToInt(pow[f])*2 < 10 then
+          begin
+          if remem=true then
+            begin
+            sum_pow:=concat(IntToStr(StrToInt(pow[f])*2 + 1),sum_pow);
+            if StrToInt(pow[f])*2 + 1 > 10 then remem:=true else remem:=false;
+            end
+
+          else begin
+            sum_pow:=concat(IntToStr(StrToInt(pow[f])*2),sum_pow);
+            end;
+          end
+
+        else begin
+          if remem=true then
+            begin
+            sum_pow:=concat(IntToStr((StrToInt(pow[f])*2 + 1) mod 10),sum_pow);
+            end
+          else begin
+            sum_pow:=concat(IntToStr((StrToInt(pow[f])*2) mod 10),sum_pow); remem:=true;
+            end;
+          end;
+
+        if (f = 1) and (remem = true) then
+          begin
+          sum_pow:=concat('1',sum_pow);
+          end;
+        end;
+      end;
+
+    if w = 0 then sum_pow:='1';
+
+    ano_sum_pow:=num; num:='';
+    if length(ano_sum_pow) < length(sum_pow) then
+      begin
+      for t:=length(ano_sum_pow) to length(sum_pow)-1 do
+        begin
+        ano_sum_pow:=concat('0',ano_sum_pow);
+        end;
+      end;
+
+    if length(ano_sum_pow) > length(sum_pow) then
+      begin
+      for t:=length(sum_pow) to length(ano_sum_pow)-1 do
+        begin
+        sum_pow:=concat('0',sum_pow);
+        end;
+      end;
+
+    remem:=false;
+    for t:=length(sum_pow) downto 1 do
+      begin
+      if StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t]) < 10 then
+        begin
+        if remem=true then
+          begin
+          if StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t]) + 1 < 10 then
+            begin
+            num:=concat(IntToStr(StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t]) + 1),num); remem:=false;
+            end
+
+          else begin
+            num:=concat(IntToStr((StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t]) + 1) mod 10),num);
+            if t = 1 then num:=concat('1',num);
+            end;
+          end
+
+        else begin
+          num:=concat(IntToStr(StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t])),num);
+          end;
+        end
+
+      else begin
+        if remem = true then
+          begin
+          num:=concat(IntToStr((StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t]) + 1) mod 10),num);
+          if t = 1 then num:=concat('1',num);
+          end
+
+        else begin
+          num:=concat(IntToStr((StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t])) mod 10),num); remem:=true;
+          if t = 1 then num:=concat('1',num);
+          end;
+        end;
+      end;
+    end;
   end;
 
-write(num:0:0);
+write(num);
 
 if decimal = true then deci;
 
