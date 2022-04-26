@@ -1,5 +1,5 @@
 uses crt,sysutils;
-var s,result,res,num_str,digit_sum,digit_plus,dividend,divisor,pow,sum_pow,ano_sum_pow,num:ansistring;
+var s,result,res,num_str,digit_sum,digit_plus,dividend,divisor,power,sum_pow,ano_sum_pow,num:ansistring;
     e,f,i,u,t,w,cnt,sep,wrong:longint;
     a:array[1..100000000] of longint;
     decimal,esc,remem:boolean;
@@ -200,39 +200,39 @@ for i:=0 to u-1 do
 
   if s[i+1] <> '0' then
     begin
-    cnt:=w; pow:='1'; sum_pow:='';
+    cnt:=w; power:='1'; sum_pow:='';
 
     for t:=1 to cnt do
       begin
       if length(sum_pow) > 0 then
         begin
-        pow:=sum_pow; sum_pow:='';
+        power:=sum_pow; sum_pow:='';
         end;
 
       remem:=false;
-      for f:=length(pow) downto 1 do
+      for f:=length(power) downto 1 do
         begin
         inc(cnt);
-        if StrToInt(pow[f])*2 < 10 then
+        if StrToInt(power[f])*2 < 10 then
           begin
           if remem=true then
             begin
-            sum_pow:=concat(IntToStr(StrToInt(pow[f])*2 + 1),sum_pow);
-            if StrToInt(pow[f])*2 + 1 > 10 then remem:=true else remem:=false;
+            sum_pow:=concat(IntToStr(StrToInt(power[f])*2 + 1),sum_pow);
+            if StrToInt(power[f])*2 + 1 > 10 then remem:=true else remem:=false;
             end
 
           else begin
-            sum_pow:=concat(IntToStr(StrToInt(pow[f])*2),sum_pow);
+            sum_pow:=concat(IntToStr(StrToInt(power[f])*2),sum_pow);
             end;
           end
 
         else begin
           if remem=true then
             begin
-            sum_pow:=concat(IntToStr((StrToInt(pow[f])*2 + 1) mod 10),sum_pow);
+            sum_pow:=concat(IntToStr((StrToInt(power[f])*2 + 1) mod 10),sum_pow);
             end
           else begin
-            sum_pow:=concat(IntToStr((StrToInt(pow[f])*2) mod 10),sum_pow); remem:=true;
+            sum_pow:=concat(IntToStr((StrToInt(power[f])*2) mod 10),sum_pow); remem:=true;
             end;
           end;
 
