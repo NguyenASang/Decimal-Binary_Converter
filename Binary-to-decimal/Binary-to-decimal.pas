@@ -1,12 +1,11 @@
 uses crt,sysutils;
-var s,result,res,num_str,digit_sum,digit_plus,dividend,divisor,power,sum_pow,ano_sum_pow,num:ansistring;
+var s,result,res,digit_sum,digit_plus,dividend,divisor,power,sum_power,ano_sum_power,num:ansistring;
     e,f,i,u,t,w,cnt,sep,wrong:longint;
     a:array[1..100000000] of longint;
     decimal,esc,remem:boolean;
 
 procedure deci;
 begin
-num_str:=concat(num,'.');
 u:=0; digit_sum:='0.0'; w:=0; res:='';
 
 for i:=sep+1 to length(s) do
@@ -155,6 +154,13 @@ for i:=sep+1 to length(s) do
     end;
   end;
 
+esc:=false; i:=length(result);
+repeat
+if result[i] = '0' then delete(result,i,1);
+if result[i-1] <> '0' then esc:=true else esc:=false;
+dec(i);
+until esc = true;
+
 for i:=2 to length(result) do write(result[i]);
 end;
 
@@ -200,13 +206,13 @@ for i:=0 to u-1 do
 
   if s[i+1] <> '0' then
     begin
-    cnt:=w; power:='1'; sum_pow:='';
+    cnt:=w; power:='1'; sum_power:='';
 
     for t:=1 to cnt do
       begin
-      if length(sum_pow) > 0 then
+      if length(sum_power) > 0 then
         begin
-        power:=sum_pow; sum_pow:='';
+        power:=sum_power; sum_power:='';
         end;
 
       remem:=false;
@@ -217,83 +223,83 @@ for i:=0 to u-1 do
           begin
           if remem=true then
             begin
-            sum_pow:=concat(IntToStr(StrToInt(power[f])*2 + 1),sum_pow);
+            sum_power:=concat(IntToStr(StrToInt(power[f])*2 + 1),sum_power);
             if StrToInt(power[f])*2 + 1 > 10 then remem:=true else remem:=false;
             end
 
           else begin
-            sum_pow:=concat(IntToStr(StrToInt(power[f])*2),sum_pow);
+            sum_power:=concat(IntToStr(StrToInt(power[f])*2),sum_power);
             end;
           end
 
         else begin
           if remem=true then
             begin
-            sum_pow:=concat(IntToStr((StrToInt(power[f])*2 + 1) mod 10),sum_pow);
+            sum_power:=concat(IntToStr((StrToInt(power[f])*2 + 1) mod 10),sum_power);
             end
           else begin
-            sum_pow:=concat(IntToStr((StrToInt(power[f])*2) mod 10),sum_pow); remem:=true;
+            sum_power:=concat(IntToStr((StrToInt(power[f])*2) mod 10),sum_power); remem:=true;
             end;
           end;
 
         if (f = 1) and (remem = true) then
           begin
-          sum_pow:=concat('1',sum_pow);
+          sum_power:=concat('1',sum_power);
           end;
         end;
       end;
 
-    if w = 0 then sum_pow:='1';
+    if w = 0 then sum_power:='1';
 
-    ano_sum_pow:=num; num:='';
-    if length(ano_sum_pow) < length(sum_pow) then
+    ano_sum_power:=num; num:='';
+    if length(ano_sum_power) < length(sum_power) then
       begin
-      for t:=length(ano_sum_pow) to length(sum_pow)-1 do
+      for t:=length(ano_sum_power) to length(sum_power)-1 do
         begin
-        ano_sum_pow:=concat('0',ano_sum_pow);
+        ano_sum_power:=concat('0',ano_sum_power);
         end;
       end;
 
-    if length(ano_sum_pow) > length(sum_pow) then
+    if length(ano_sum_power) > length(sum_power) then
       begin
-      for t:=length(sum_pow) to length(ano_sum_pow)-1 do
+      for t:=length(sum_power) to length(ano_sum_power)-1 do
         begin
-        sum_pow:=concat('0',sum_pow);
+        sum_power:=concat('0',sum_power);
         end;
       end;
 
     remem:=false;
-    for t:=length(sum_pow) downto 1 do
+    for t:=length(sum_power) downto 1 do
       begin
-      if StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t]) < 10 then
+      if StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) < 10 then
         begin
         if remem=true then
           begin
-          if StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t]) + 1 < 10 then
+          if StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1 < 10 then
             begin
-            num:=concat(IntToStr(StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t]) + 1),num); remem:=false;
+            num:=concat(IntToStr(StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1),num); remem:=false;
             end
 
           else begin
-            num:=concat(IntToStr((StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t]) + 1) mod 10),num);
+            num:=concat(IntToStr((StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1) mod 10),num);
             if t = 1 then num:=concat('1',num);
             end;
           end
 
         else begin
-          num:=concat(IntToStr(StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t])),num);
+          num:=concat(IntToStr(StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t])),num);
           end;
         end
 
       else begin
         if remem = true then
           begin
-          num:=concat(IntToStr((StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t]) + 1) mod 10),num);
+          num:=concat(IntToStr((StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1) mod 10),num);
           if t = 1 then num:=concat('1',num);
           end
 
         else begin
-          num:=concat(IntToStr((StrToInt(sum_pow[t]) + StrToInt(ano_sum_pow[t])) mod 10),num); remem:=true;
+          num:=concat(IntToStr((StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t])) mod 10),num); remem:=true;
           if t = 1 then num:=concat('1',num);
           end;
         end;
