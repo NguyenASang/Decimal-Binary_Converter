@@ -1,7 +1,6 @@
 uses crt,sysutils;
 var s,result,res,digit_sum,digit_plus,dividend,divisor,power,sum_power,ano_sum_power,num:ansistring;
     e,f,i,u,t,w,cnt,sep,wrong:longint;
-    a:array[1..100000000] of longint;
     decimal,esc,remem:boolean;
 
 procedure deci;
