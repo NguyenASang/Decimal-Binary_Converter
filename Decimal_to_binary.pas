@@ -10,7 +10,7 @@ end;
 
 procedure Integer_part;
 begin
-for i:=1 to sep do num_bin:=concat(num_bin,s[i]);
+for i:=1 to sep-1 do num_bin:=concat(num_bin,s[i]);
 
 num_div:=s; u:=0;
 repeat
@@ -108,7 +108,7 @@ for i:=1 to length(s) do
   begin
   if s[i] = '.' then
      begin
-     sep:=i-1; decimal:=true;
+     sep:=i; decimal:=true;
      end;
 
   if (i = length(s)) and (decimal = false) then sep:=length(s);
