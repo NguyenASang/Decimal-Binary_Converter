@@ -6,9 +6,8 @@ var s,result,res,digit_sum,digit_plus,dividend,divisor,power,sum_power,ano_sum_p
 procedure Decimal_part;
 begin
 u:=0; digit_sum:='0.0'; w:=0; res:='';
-for i:=sep+1 to length(s) do
+for i:=sep + 1 to length(s) do
   begin
-
   if length(res) = 0 then dividend:='1'
 
   else begin
@@ -18,14 +17,11 @@ for i:=sep+1 to length(s) do
   remem:=false; w:=0; esc:=false;
   while esc = false do
     begin
-
     inc(w);
     if dividend[w] <> '.' then
       begin
-
       if StrToInt(dividend[w]) mod 2 <> 0 then
         begin
-
         if remem = false then
           begin
           res:=concat(res,IntToStr(StrToInt(dividend[w]) div 2)); remem:=true;
@@ -33,7 +29,6 @@ for i:=sep+1 to length(s) do
           end
 
         else begin
-
           if w <> length(dividend) then
             begin
             res:=concat(res,IntToStr((10 + StrToInt(dividend[w])) div 2));
@@ -48,11 +43,9 @@ for i:=sep+1 to length(s) do
         end
 
       else begin
-
         if remem = false then res:=concat(res,IntToStr(StrToInt(dividend[w]) div 2))
 
         else begin
-
           if w <> length(dividend) then
             begin
             res:=concat(res,IntToStr((10 + StrToInt(dividend[w])) div 2));
@@ -71,7 +64,6 @@ for i:=sep+1 to length(s) do
 
     if w + 1 > length(dividend) then
       begin
-
       cnt:=0;
       for w:=1 to length(res) do
         begin
@@ -90,7 +82,6 @@ for i:=sep+1 to length(s) do
 
   if s[i] <> '0' then
     begin
-
     digit_plus:=res;
     if length(result) > 0 then
       begin
@@ -110,16 +101,12 @@ for i:=sep+1 to length(s) do
     remem:=false;
     for e:=length(digit_sum) downto 1 do
       begin
-
       if (digit_sum[e] <> '.') and (digit_plus[e] <> '.') then
         begin
-
         if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) < 10 then
           begin
-
           if remem = true then
             begin
-
             if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
               begin
               result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1) mod 10),result);
@@ -136,10 +123,8 @@ for i:=sep+1 to length(s) do
           end
 
         else begin
-
           if remem = true then
             begin
-
             if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
               begin
               result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1) mod 10),result);
@@ -166,7 +151,7 @@ for i:=sep+1 to length(s) do
 esc:=false; i:=length(result);
 repeat
   if result[i] = '0' then delete(result,i,1);
-  if result[i-1] <> '0' then esc:=true else esc:=false;
+  if result[i - 1] <> '0' then esc:=true else esc:=false;
   dec(i);
 until esc = true;
 
@@ -178,15 +163,12 @@ begin
 w:=u; num:='0';
 for i:=0 to u - 1 do
   begin
-
   dec(w);
   if s[i + 1] <> '0' then
     begin
-
     cnt:=w; power:='1'; sum_power:='';
     for t:=1 to cnt do
       begin
-
       if length(sum_power) > 0 then
         begin
         power:=sum_power; sum_power:='';
@@ -195,11 +177,9 @@ for i:=0 to u - 1 do
       remem:=false;
       for f:=length(power) downto 1 do
         begin
-
         inc(cnt);
         if StrToInt(power[f]) * 2 < 10 then
           begin
-
           if remem = true then
             begin
             sum_power:=concat(IntToStr(StrToInt(power[f]) * 2 + 1),sum_power);
@@ -210,7 +190,6 @@ for i:=0 to u - 1 do
           end
 
         else begin
-
           if remem = true then sum_power:=concat(IntToStr((StrToInt(power[f]) * 2 + 1) mod 10),sum_power)
 
           else begin
@@ -239,13 +218,10 @@ for i:=0 to u - 1 do
     remem:=false;
     for t:=length(sum_power) downto 1 do
       begin
-
       if StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) < 10 then
         begin
-
         if remem = true then
           begin
-
           if StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1 < 10 then
             begin
             num:=concat(IntToStr(StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1),num);
@@ -264,7 +240,6 @@ for i:=0 to u - 1 do
         end
 
       else begin
-
         if remem = true then
           begin
           num:=concat(IntToStr((StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1) mod 10),num);
@@ -292,11 +267,9 @@ write('Enter the binary to convert:  '); readln(s);
 wrong:=2;
 while wrong > 1 do
   begin
-
   wrong:=0; decimal:=false;
   for i:=1 to length(s) do
     begin
-
     if s[i] = '.' then
       begin
       inc(wrong);
