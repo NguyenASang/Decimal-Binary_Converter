@@ -10,7 +10,14 @@ end;
 
 procedure Integer_part;
 begin
-for i:=1 to sep-1 do num_bin:=concat(num_bin,s[i]);
+if decimal = true then
+  begin
+  for i:=1 to sep-1 do num_bin:=concat(num_bin,s[i]);
+  end
+
+else begin
+  for i:=1 to sep do num_bin:=concat(num_bin,s[i]);
+  end;
 
 num_div:=s; u:=0;
 repeat
