@@ -1,177 +1,297 @@
 uses crt,sysutils;
-var i,sep,cnt:longint;
-    s,num_bin,num_div,num_res,dec_res,dec_bin:string;
-    decimal,remem,wrong,negative:boolean;
+var s,result,res,digit_sum,digit_plus,dividend,divisor,power,sum_power,ano_sum_power,num:ansistring;
+    e,f,i,u,t,w,cnt,sep:longint;
+    decimal,esc,remem,wrong,negative:boolean;
 
 procedure Decimal_part;
 begin
-dec_res:='';
-for i:=sep - 1 to length(s) do
+u:=0; digit_sum:='0.0'; w:=0; res:='';
+for i:=sep + 1 to length(s) do
   begin
-  if i < sep then dec_res:=concat('0',dec_res) else dec_res:=concat(dec_res,s[i]);
-  end;
+  if length(res) = 0 then dividend:='1'
 
-write('.');
+  else begin
+    dividend:=res; res:='';
+    end;
 
-repeat
-  dec_bin:=dec_res; dec_res:=''; remem:=false;
-  for i:=length(dec_bin) downto 1 do
+  remem:=false; w:=0; esc:=false;
+  while esc = false do
     begin
-    if (dec_bin[i] <> '.') and (i <> 1) then
+    inc(w);
+    if dividend[w] <> '.' then
       begin
-      if StrToInt(dec_bin[i]) * 2 < 10 then
+      if StrToInt(dividend[w]) mod 2 <> 0 then
         begin
-        if remem = true then
+        if remem = false then
           begin
-          dec_res:=concat(IntToStr(StrToInt(dec_bin[i]) * 2 + 1),dec_res);
-          remem:=false;
+          res:=concat(res,IntToStr(StrToInt(dividend[w]) div 2)); remem:=true;
+          if w = length(dividend) then dividend:=concat(dividend,'1');
           end
 
         else begin
-          dec_res:=concat(IntToStr(StrToInt(dec_bin[i]) * 2),dec_res);
+          if w <> length(dividend) then
+            begin
+            res:=concat(res,IntToStr((10 + StrToInt(dividend[w])) div 2));
+            if (10 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            end
+
+          else begin
+            res:=concat(res,IntToStr((9 + StrToInt(dividend[w])) div 2));
+            if (9 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            end;
+          end;
+        end
+
+      else begin
+        if remem = false then res:=concat(res,IntToStr(StrToInt(dividend[w]) div 2))
+
+        else begin
+          if w <> length(dividend) then
+            begin
+            res:=concat(res,IntToStr((10 + StrToInt(dividend[w])) div 2));
+            if (10 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            end
+
+          else begin
+            res:=concat(res,IntToStr((9 + StrToInt(dividend[w])) div 2));
+            if (9 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            end;
+          end;
+        end;
+      end;
+
+    if dividend[w] = '.' then res:=concat(res,'.');
+
+    if w + 1 > length(dividend) then
+      begin
+      cnt:=0;
+      for w:=1 to length(res) do
+        begin
+        if res[w] = '.' then inc(cnt);
+        end;
+
+      if cnt = 0 then
+        begin
+        for w:=length(res) downto 2 do res:=concat(res,res[w]);
+        res[2]:='.';
+        end;
+
+      esc:=true;
+      end;
+    end;
+
+  if s[i] <> '0' then
+    begin
+    digit_plus:=res;
+    if length(result) > 0 then
+      begin
+      digit_sum:=result; result:='';
+      end;
+
+    if length(digit_plus) > length(digit_sum) then
+      begin
+      for e:=length(digit_sum) to length(digit_plus) - 1 do digit_sum:=concat(digit_sum,'0');
+      end;
+
+    if length(digit_plus) < length(digit_sum) then
+      begin
+      for e:=length(digit_plus) to length(digit_sum) - 1 do digit_plus:=concat(digit_plus,'0');
+      end;
+
+    remem:=false;
+    for e:=length(digit_sum) downto 1 do
+      begin
+      if (digit_sum[e] <> '.') and (digit_plus[e] <> '.') then
+        begin
+        if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) < 10 then
+          begin
+          if remem = true then
+            begin
+            if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
+              begin
+              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1) mod 10),result);
+              remem:=true
+              end
+
+            else begin
+              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1),result);
+              remem:=false;
+              end;
+            end
+
+          else result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])),result);
+          end
+
+        else begin
+          if remem = true then
+            begin
+            if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
+              begin
+              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1) mod 10),result);
+              remem:=true
+              end
+
+            else begin
+              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1),result);
+              remem:=false;
+              end;
+            end
+
+          else result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])) mod 10),result);
+
+          remem:=true;
+          end;
+        end;
+
+      if (digit_sum[e] = '.') and (digit_plus[e] = '.') then result:=concat('.',result);
+      end;
+    end;
+  end;
+
+esc:=false; i:=length(result);
+repeat
+  if result[i] = '0' then delete(result,i,1);
+  if result[i - 1] <> '0' then esc:=true else esc:=false;
+  dec(i);
+until esc = true;
+
+for i:=2 to length(result) do write(result[i]);
+end;
+
+procedure Integer_part;
+begin
+w:=u; num:='0';
+for i:=0 to u - 1 do
+  begin
+  dec(w);
+  if s[i + 1] <> '0' then
+    begin
+    cnt:=w; power:='1'; sum_power:='';
+    for t:=1 to cnt do
+      begin
+      if length(sum_power) > 0 then
+        begin
+        power:=sum_power; sum_power:='';
+        end;
+
+      remem:=false;
+      for f:=length(power) downto 1 do
+        begin
+        inc(cnt);
+        if StrToInt(power[f]) * 2 < 10 then
+          begin
+          if remem = true then
+            begin
+            sum_power:=concat(IntToStr(StrToInt(power[f]) * 2 + 1),sum_power);
+            if StrToInt(power[f]) * 2 + 1 > 10 then remem:=true else remem:=false;
+            end
+
+          else sum_power:=concat(IntToStr(StrToInt(power[f]) * 2),sum_power);
+          end
+
+        else begin
+          if remem = true then sum_power:=concat(IntToStr((StrToInt(power[f]) * 2 + 1) mod 10),sum_power)
+
+          else begin
+            sum_power:=concat(IntToStr((StrToInt(power[f]) * 2) mod 10),sum_power);
+            remem:=true;
+            end;
+          end;
+
+        if (f = 1) and (remem = true) then sum_power:=concat('1',sum_power);
+        end;
+      end;
+
+    if w = 0 then sum_power:='1';
+
+    ano_sum_power:=num; num:='';
+    if length(ano_sum_power) < length(sum_power) then
+      begin
+      for t:=length(ano_sum_power) to length(sum_power) - 1 do ano_sum_power:=concat('0',ano_sum_power);
+      end;
+
+    if length(ano_sum_power) > length(sum_power) then
+      begin
+      for t:=length(sum_power) to length(ano_sum_power) - 1 do sum_power:=concat('0',sum_power);
+      end;
+
+    remem:=false;
+    for t:=length(sum_power) downto 1 do
+      begin
+      if StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) < 10 then
+        begin
+        if remem = true then
+          begin
+          if StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1 < 10 then
+            begin
+            num:=concat(IntToStr(StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1),num);
+            remem:=false;
+            end
+
+          else begin
+            num:=concat(IntToStr((StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1) mod 10),num);
+            if t = 1 then num:=concat('1',num);
+            end;
+          end
+
+        else begin
+          num:=concat(IntToStr(StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t])),num);
           end;
         end
 
       else begin
         if remem = true then
           begin
-          dec_res:=concat(IntToStr((StrToInt(dec_bin[i]) * 2 + 1) mod 10),dec_res);
+          num:=concat(IntToStr((StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1) mod 10),num);
+          if t = 1 then num:=concat('1',num);
           end
 
         else begin
-          dec_res:=concat(IntToStr((StrToInt(dec_bin[i]) * 2) mod 10),dec_res); remem:=true;
+          num:=concat(IntToStr((StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t])) mod 10),num); remem:=true;
+          if t = 1 then num:=concat('1',num);
           end;
         end;
       end;
-
-    if dec_bin[i] = '.' then
-      begin
-      dec_res:=concat('0.',dec_res);
-      end;
-
-    if (i = 1) and (remem = true) then
-      begin
-      dec_res[1]:='1';
-      write(1); inc(cnt);
-      end;
-
-    if (i = 1) and (remem = false) then
-      begin
-      dec_res[1]:='0';
-      write(0); inc(cnt);
-      end;
-    end;
-
-if cnt = 100 then
-  begin
-  write('...');   //  Temporary solution
-  end;
-
-until (round(StrToFloat(dec_res)) - StrToFloat(dec_res) = 0) or (cnt = 100);
-end;
-
-procedure Integer_part;
-begin
-if decimal = true then
-  begin
-  for i:=1 to sep-1 do num_bin:=concat(num_bin,s[i]);
-  end
-
-else begin
-  for i:=1 to sep do num_bin:=concat(num_bin,s[i]);
-  end;
-
-num_div:=s;
-repeat
-if num_div <> s then
-  begin
-  num_bin:=num_div; num_div:='';
-  end
-
-else num_div:='';
-
-if StrToInt(num_bin[length(num_bin)]) mod 2 <> 0 then
-  begin
-  num_bin:=concat(num_bin,IntToStr(StrToInt(num_bin[length(num_bin)]) - 1));
-  delete(num_bin,length(num_bin)-1,1);
-  num_res:=concat('1',num_res);
-  end
-
-else begin
-  num_res:=concat('0',num_res);
-  end;
-
-remem:=false;
-for i:=1 to length(num_bin) do
-  begin
-  if StrToInt(num_bin[i]) mod 2 <> 0 then
-    begin
-    if remem = true then
-      begin
-      num_div:=concat(num_div,IntToStr((10 + StrToInt(num_bin[i])) div 2));
-      end
-
-    else begin
-      if (num_bin[i] = '1') and (i <> 1) then
-        begin
-        num_div:=concat(num_div,IntToStr(StrToInt(num_bin[i]) div 2));
-        end;
-
-      if num_bin[i] <> '1' then
-        begin
-        num_div:=concat(num_div,IntToStr(StrToInt(num_bin[i]) div 2));
-        end;
-
-      remem:=true;
-      end;
-    end
-
-  else begin
-    if remem = true then
-      begin
-      num_div:=concat(num_div,IntToStr((10 + StrToInt(num_bin[i])) div 2));
-      remem:=false;
-      end
-
-    else begin
-      num_div:=concat(num_div,IntToStr(StrToInt(num_bin[i]) div 2));
-      end;
     end;
   end;
 
-until (length(num_div) = 1) and (num_div ='0');
-
-write(num_res);
+write(num);
 
 if decimal = true then Decimal_part;
 end;
 
 begin
 clrscr;
-write('Enter decimal to convert: '); readln(s);
+write('Enter the binary to convert: '); readln(s);
 
 wrong:=true;
 while wrong = true do
   begin
-  wrong:=false; negative:=false; decimal:=false;
+  wrong:=false; decimal:=false; negative:=false;
   for i:=1 to length(s) do
-   begin
-   if (i = 1) and (s[i] = '-') and (negative = false) then negative:=true;
+    begin
 
-   if (i <> 1) and (s[i] = '-') or (i <> 1) and (s[i] = '-') and (negative = true) then wrong:=true;
+    if (s[i] = '-') and (negative = false) and (i = 1) then negative:=true
+    else if (s[i] = '-') and (negative = true) or (s[i] = '-') and (i <> 1) then wrong:=true;
 
-   if (s[i] = '.') and (decimal = true) then wrong:=true;
+    if (s[i] = '.') and (decimal = false) then decimal:=true
+    else if (s[i] = '.') and (decimal = true) then wrong:=true;
 
-   if (s[i] = '.') and (decimal = false) then decimal:=true
-   end;
+    if (s[i] <> '.') and (s[i] <> '0') and (s[i] <> '1') and (s[i] <> '-') then wrong:=true;
+    end;
 
   if wrong = true then
     begin
-    write('Invalid decimal entered, re-enter: '); readln(s);
+    write('Invalid binary entered, re-enter: '); readln(s);
     end;
   end;
 
-writeln(SlineBreak,'Convert to binary: ');
+writeln(sLineBreak,'Convert to decimal: ');
+
+for i:=1 to length(s) do
+  begin
+  if s[i] = '.' then sep:=i;
+  end;
 
 if negative = true then
   begin
@@ -179,15 +299,7 @@ if negative = true then
   delete(s,1,1);
   end;
 
-for i:=1 to length(s) do
-  begin
-  if s[i] = '.' then
-     begin
-     sep:=i; decimal:=true;
-     end;
-
-  if (i = length(s)) and (decimal = false) then sep:=length(s);
-  end;
+if decimal = true then u:=sep - 1 else u:=length(s);
 
 Integer_part;
 
