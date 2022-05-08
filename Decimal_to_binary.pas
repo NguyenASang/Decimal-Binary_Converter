@@ -1,5 +1,5 @@
 uses crt,sysutils;
-var i,right,sep,u,cnt:longint;
+var i,sep,cnt:longint;
     s,num_bin,num_div,num_res,dec_res,dec_bin:string;
     decimal,remem,wrong,negative:boolean;
 
@@ -81,9 +81,7 @@ else begin
   for i:=1 to sep do num_bin:=concat(num_bin,s[i]);
   end;
 
-if negative = true then delete(num_bin,length(num_bin),1);
-
-num_div:=s; u:=0;
+num_div:=s;
 repeat
 if num_div <> s then
   begin
@@ -96,11 +94,11 @@ if StrToInt(num_bin[length(num_bin)]) mod 2 <> 0 then
   begin
   num_bin:=concat(num_bin,IntToStr(StrToInt(num_bin[length(num_bin)]) - 1));
   delete(num_bin,length(num_bin)-1,1);
-  inc(u); num_res[u]:='1';
+  num_res:=concat('1',num_res);
   end
 
 else begin
-  inc(u); num_res[u]:='0';
+  num_res:=concat('0',num_res);
   end;
 
 remem:=false;
@@ -143,14 +141,14 @@ for i:=1 to length(num_bin) do
 
 until (length(num_div) = 1) and (num_div ='0');
 
-for i:=u downto 1 do write(num_res[i]);
+write(num_res);
 
 if decimal = true then Decimal_part;
 end;
 
 begin
 clrscr;
-write('Enter the decimal to convert: '); readln(s);
+write('Enter decimal to convert: '); readln(s);
 
 wrong:=true;
 while wrong = true do
@@ -173,6 +171,8 @@ while wrong = true do
     end;
   end;
 
+writeln(SlineBreak,'Convert to binary: ');
+
 if negative = true then
   begin
   write('-');
@@ -188,8 +188,6 @@ for i:=1 to length(s) do
 
   if (i = length(s)) and (decimal = false) then sep:=length(s);
   end;
-
-writeln(sLineBreak,'Convert to binary: ');
 
 Integer_part;
 
