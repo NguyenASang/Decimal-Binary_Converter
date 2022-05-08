@@ -189,6 +189,8 @@ for i:=1 to length(s) do
   if (i = length(s)) and (decimal = false) then sep:=length(s);
   end;
 
+writeln(sLineBreak,'Convert to binary: ');
+
 Integer_part;
 
 readln;
