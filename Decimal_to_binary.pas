@@ -173,6 +173,11 @@ while wrong = true do
     end;
   end;
 
+if negative = true then
+  begin
+  write('-');
+  delete(s,1,1);
+  end;
 
 for i:=1 to length(s) do
   begin
@@ -182,12 +187,6 @@ for i:=1 to length(s) do
      end;
 
   if (i = length(s)) and (decimal = false) then sep:=length(s);
-  end;
-
-if negative = true then
-  begin
-  write('-');
-  delete(s,1,1);
   end;
 
 Integer_part;
