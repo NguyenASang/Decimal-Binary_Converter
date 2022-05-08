@@ -1,7 +1,7 @@
 uses crt,sysutils;
 var s,result,res,digit_sum,digit_plus,dividend,divisor,power,sum_power,ano_sum_power,num:ansistring;
-    e,f,i,u,t,w,cnt,sep,wrong:longint;
-    decimal,esc,remem:boolean;
+    e,f,i,u,t,w,cnt,sep:longint;
+    decimal,esc,remem,wrong,negative:boolean;
 
 procedure Decimal_part;
 begin
@@ -262,24 +262,24 @@ end;
 
 begin
 clrscr;
-write('Enter the binary to convert:  '); readln(s);
+write('Enter the binary to convert: '); readln(s);
 
-wrong:=2;
-while wrong > 1 do
+wrong:=true;
+while wrong = true do
   begin
-  wrong:=0; decimal:=false;
+  wrong:=false; decimal:=false; negative:=false;
   for i:=1 to length(s) do
     begin
-    if s[i] = '.' then
-      begin
-      inc(wrong);
-      decimal:=true;
-      end;
+    if (s[i] = '-') and (negative = false) and (i = 1) then negative:=true
+    else if (s[i] = '-') and (negative = true) or (s[i] = '-') and (i <> 1) then wrong:=true;
 
-    if (s[i] <> '.') and (s[i] <> '0') and (s[i] <> '1') then inc(wrong);
+    if (s[i] = '.') and (decimal = false) then decimal:=true
+    else if (s[i] = '.') and (decimal = true) then wrong:=true;
+
+    if (s[i] <> '.') and (s[i] <> '0') and (s[i] <> '1') and (s[i] <> '-') then wrong:=true;
     end;
 
-  if wrong > 1 then
+  if wrong = true then
     begin
     write('Invalid binary entered, re-enter: '); readln(s);
     end;
@@ -290,6 +290,12 @@ writeln(sLineBreak,'Convert to decimal: ');
 for i:=1 to length(s) do
   begin
   if s[i] = '.' then sep:=i;
+  end;
+
+if negative = true then
+  begin
+  write('-');
+  delete(s,1,1);
   end;
 
 if decimal = true then u:=sep - 1 else u:=length(s);
