@@ -5,69 +5,109 @@ var i,sep,cnt:longint;
 
 procedure Decimal_part;
 begin
-dec_res:='';
-for i:=sep - 1 to length(s) do
-  begin
-  if i < sep then dec_res:=concat('0',dec_res) else dec_res:=concat(dec_res,s[i]);
-  end;
-
 write('.');
-
+limit:=10; cnt:=0; first:=0; loop:=false; mul:=0;
 repeat
-  dec_bin:=dec_res; dec_res:=''; remem:=false;
-  for i:=length(dec_bin) downto 1 do
+  dec_mul:='';
+  for i:=sep - 1 to length(s) do
     begin
-    if (dec_bin[i] <> '.') and (i <> 1) then
+    if i < sep then dec_mul:=concat('0',dec_mul) else dec_mul:=concat(dec_mul,s[i]);
+    end;
+
+  if (cnt = round(limit)) and (loop = false) then
+    begin
+    mul:=mul + 100; limit:=limit + mul; //To avoid too big cases
+    end;
+
+  inc(first); loop_find:=''; cnt:=0; dec_res:='';
+  repeat
+    dec_bin:=dec_mul; dec_mul:=''; remem:=false; inc(cnt);
+    for i:=length(dec_bin) downto 1 do
       begin
-      if StrToInt(dec_bin[i]) * 2 < 10 then
+      if (dec_bin[i] <> '.') and (i <> 1) then
         begin
-        if remem = true then
+        if StrToInt(dec_bin[i]) * 2 < 10 then
           begin
-          dec_res:=concat(IntToStr(StrToInt(dec_bin[i]) * 2 + 1),dec_res);
-          remem:=false;
+          if remem = true then
+            begin
+            dec_mul:=concat(IntToStr(StrToInt(dec_bin[i]) * 2 + 1),dec_mul);
+            remem:=false;
+            end
+
+          else begin
+            dec_mul:=concat(IntToStr(StrToInt(dec_bin[i]) * 2),dec_mul);
+            end;
           end
 
         else begin
-          dec_res:=concat(IntToStr(StrToInt(dec_bin[i]) * 2),dec_res);
-          end;
-        end
+          if remem = true then
+            begin
+            dec_mul:=concat(IntToStr((StrToInt(dec_bin[i]) * 2 + 1) mod 10),dec_mul);
+            end
 
-      else begin
-        if remem = true then
-          begin
-          dec_res:=concat(IntToStr((StrToInt(dec_bin[i]) * 2 + 1) mod 10),dec_res);
-          end
-
-        else begin
-          dec_res:=concat(IntToStr((StrToInt(dec_bin[i]) * 2) mod 10),dec_res); remem:=true;
+          else begin
+            dec_mul:=concat(IntToStr((StrToInt(dec_bin[i]) * 2) mod 10),dec_mul); remem:=true;
+            end;
           end;
+        end;
+
+      if dec_bin[i] = '.' then
+        begin
+        dec_mul:=concat('0.',dec_mul);
+        end;
+
+      if (i = 1) and (remem = true) then
+        begin
+        dec_mul[1]:='1';
+        dec_res:=concat(dec_res,'1');
+        end;
+
+      if (i = 1) and (remem = false) then
+        begin
+        dec_mul[1]:='0';
+        dec_res:=concat(dec_res,'0');
         end;
       end;
 
-    if dec_bin[i] = '.' then
+
+    if dec_mul = loop_find then loop:=true;
+
+    if cnt = first then
       begin
-      dec_res:=concat('0.',dec_res);
+      loop_find:=dec_mul;
       end;
 
-    if (i = 1) and (remem = true) then
-      begin
-      dec_res[1]:='1';
-      write(1); inc(cnt);
-      end;
+  until (round(StrToFloat(dec_mul)) - StrToFloat(dec_mul) = 0) or (loop = true) or (cnt >= round(limit)) and (loop = false);
 
-    if (i = 1) and (remem = false) then
+until (round(StrToFloat(dec_mul)) - StrToFloat(dec_mul) = 0) or (loop = true);
+
+if loop = true then
+  begin
+  for i:=1 to length(dec_res) do
+    begin
+    if i = first then
       begin
-      dec_res[1]:='0';
-      write(0); inc(cnt);
-      end;
+      TextColor(Green);
+      write(dec_res[i]);
+      end
+
+    else write(dec_res[i]);
     end;
 
-if cnt = 100 then
-  begin
-  write('...');   //  Temporary solution
-  end;
+  TextColor(White);
+  writeln('...');
 
-until (round(StrToFloat(dec_res)) - StrToFloat(dec_res) = 0) or (cnt = 100);
+  TextColor(Red);
+  write(sLineBreak,'Note: ');
+
+  TextColor(Green);
+  write('Green part');
+
+  TextColor(White);
+  write(' is the loop forever part');
+  end
+
+else write(dec_res);
 end;
 
 procedure Integer_part;
