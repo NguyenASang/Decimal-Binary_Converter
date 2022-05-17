@@ -1,7 +1,7 @@
 uses crt,sysutils;
-var i,sep,cnt:longint;
-    s,num_bin,num_div,num_res,dec_res,dec_bin:string;
-    decimal,remem,wrong,negative:boolean;
+var i,sep,cnt,limit,first,mul:longint;
+    s,num_bin,num_div,num_res,dec_res,dec_bin,dec_mul,loop_find:string;
+    decimal,remem,wrong,negative,loop:boolean;
 
 procedure Decimal_part;
 begin
