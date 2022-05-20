@@ -136,8 +136,7 @@ if loop = true then
   write(' is the loop forever part');
   end
 
-else
- write(dec_res);
+else write(dec_res);
 end;
 
 procedure Integer_part;
