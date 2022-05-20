@@ -1,89 +1,118 @@
 uses crt,sysutils;
-var i,sep,cnt,limit,first,mul:longint;
-    s,num_bin,num_div,num_res,dec_res,dec_bin,dec_mul,loop_find:string;
+var i,sep,cnt,limit,first,mul,last,split,cnt_split,u,e:longint;
+    s,num_bin,num_div,num_res,dec_bin,dec_mul,loop_find,compare,save,dec_res,dec_float,dec_float_save:ansistring;
     decimal,remem,wrong,negative,loop:boolean;
 
 procedure Decimal_part;
 begin
 write('.');
-limit:=10; cnt:=0; first:=0; loop:=false; mul:=0;
+loop:=false; dec_mul:='';
+for i:=sep - 1 to length(s) do
+  begin
+  if i < sep then dec_mul:=concat('0',dec_mul) else dec_mul:=concat(dec_mul,s[i]);
+  end;
+
+dec_res:=''; compare:=''; dec_float:=''; split:=1; cnt:=1; cnt_split:=1;
 repeat
-  dec_mul:='';
-  for i:=sep - 1 to length(s) do
+  dec_bin:=dec_mul; dec_mul:=''; remem:=false;
+  for i:=length(dec_bin) downto 1 do
     begin
-    if i < sep then dec_mul:=concat('0',dec_mul) else dec_mul:=concat(dec_mul,s[i]);
-    end;
-
-  if (cnt = round(limit)) and (loop = false) then
-    begin
-    mul:=mul + 100; limit:=limit + mul; //To avoid too big cases
-    end;
-
-  inc(first); loop_find:=''; cnt:=0; dec_res:='';
-  repeat
-    dec_bin:=dec_mul; dec_mul:=''; remem:=false; inc(cnt);
-    for i:=length(dec_bin) downto 1 do
+    if (dec_bin[i] <> '.') and (i <> 1) then
       begin
-      if (dec_bin[i] <> '.') and (i <> 1) then
+      if StrToInt(dec_bin[i]) * 2 < 10 then
         begin
-        if StrToInt(dec_bin[i]) * 2 < 10 then
+        if remem = true then
           begin
-          if remem = true then
-            begin
-            dec_mul:=concat(IntToStr(StrToInt(dec_bin[i]) * 2 + 1),dec_mul);
-            remem:=false;
-            end
-
-          else begin
-            dec_mul:=concat(IntToStr(StrToInt(dec_bin[i]) * 2),dec_mul);
-            end;
+          dec_mul:=concat(IntToStr(StrToInt(dec_bin[i]) * 2 + 1),dec_mul);
+          remem:=false;
           end
 
         else begin
-          if remem = true then
-            begin
-            dec_mul:=concat(IntToStr((StrToInt(dec_bin[i]) * 2 + 1) mod 10),dec_mul);
-            end
+          dec_mul:=concat(IntToStr(StrToInt(dec_bin[i]) * 2),dec_mul);
+          end;
+        end
 
-          else begin
-            dec_mul:=concat(IntToStr((StrToInt(dec_bin[i]) * 2) mod 10),dec_mul); remem:=true;
-            end;
+      else begin
+        if remem = true then
+          begin
+          dec_mul:=concat(IntToStr((StrToInt(dec_bin[i]) * 2 + 1) mod 10),dec_mul);
+          end
+
+        else begin
+          dec_mul:=concat(IntToStr((StrToInt(dec_bin[i]) * 2) mod 10),dec_mul); remem:=true;
           end;
         end;
-
-      if dec_bin[i] = '.' then
-        begin
-        dec_mul:=concat('0.',dec_mul);
-        end;
-
-      if (i = 1) and (remem = true) then
-        begin
-        dec_mul[1]:='1';
-        dec_res:=concat(dec_res,'1');
-        end;
-
-      if (i = 1) and (remem = false) then
-        begin
-        dec_mul[1]:='0';
-        dec_res:=concat(dec_res,'0');
-        end;
       end;
 
-
-    if dec_mul = loop_find then loop:=true;
-
-    if cnt = first then
+    if dec_bin[i] = '.' then
       begin
-      loop_find:=dec_mul;
+      dec_mul:=concat('0.',dec_mul);
       end;
 
-  until (round(StrToFloat(dec_mul)) - StrToFloat(dec_mul) = 0) or (loop = true) or (cnt >= round(limit)) and (loop = false);
+    if (i = 1) and (remem = true) then
+      begin
+      dec_mul[1]:='1';
+      dec_res:=concat(dec_res,'1');
+      end;
 
-until (round(StrToFloat(dec_mul)) - StrToFloat(dec_mul) = 0) or (loop = true);
+    if (i = 1) and (remem = false) then
+      begin
+      dec_mul[1]:='0';
+      dec_res:=concat(dec_res,'0');
+      end;
+    end;
+
+  if length(dec_float) > 0 then
+    begin
+    i:=0; loop:=false; dec_float_save:='';
+    repeat
+      inc(i);
+      if (dec_float[i] = ' ')  then
+        begin
+        u:=i; compare:=''; cnt_split:=1;
+        repeat
+          dec(u);
+          compare:=concat(dec_float[u],compare);
+        until (dec_float[u - 1] = ' ') or (u = 2);
+
+        for e:=i downto 1 do
+          begin
+          save:=concat(dec_float[e],save);
+          delete(dec_float,e,1);
+        end;
+
+
+        dec_float_save:=concat(dec_float_save,save); save:='';
+
+        inc(cnt_split);
+
+        if (compare = dec_mul) or (FloatToStr((STrToFloat(compare) + 1)) = dec_mul) or (FloatToStr((STrToFloat(dec_mul) + 1)) = compare) then
+          begin
+          first:=cnt_split; last:=cnt; loop:=true;
+          end;
+
+        i:=0;
+        end;
+    until length(dec_float) = 0;
+
+    if loop = false then
+      begin
+      dec_float_save:=concat(dec_float_save,dec_mul,' ');
+      end;
+
+    dec_float:=concat(dec_float,dec_float_save);
+    end
+
+  else begin
+    dec_float:=concat(dec_float,dec_mul,' ');
+    end;
+
+  inc(cnt);
+until (round(StrToFloat(dec_mul)) - StrToFloat(dec_mul) = 0) or (loop = true); //or (length(dec_res) >= 255);
 
 if loop = true then
   begin
-  for i:=1 to length(dec_res) do
+  for i:=1 to last do
     begin
     if i = first then
       begin
@@ -107,7 +136,8 @@ if loop = true then
   write(' is the loop forever part');
   end
 
-else write(dec_res);
+else
+ write(dec_res);
 end;
 
 procedure Integer_part;
