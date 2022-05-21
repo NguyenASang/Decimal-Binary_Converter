@@ -1,6 +1,6 @@
 uses crt,sysutils;
-var i,sep,cnt,limit,first,mul,last,split,cnt_split,u,e:longint;
-    s,num_bin,num_div,num_res,dec_bin,dec_mul,loop_find,compare,save,dec_res,dec_float,dec_float_save:ansistring;
+var i,sep,cnt,first,last,split,cnt_split,u:longint;
+    s,num_bin,num_div,num_res,dec_bin,dec_mul,compare,dec_res,dec_float:ansistring;
     decimal,remem,wrong,negative,loop:boolean;
 
 procedure Decimal_part;
@@ -64,43 +64,31 @@ repeat
 
   if length(dec_float) > 0 then
     begin
-    i:=0; loop:=false; dec_float_save:='';
-    repeat
-      inc(i);
+    i:=0; loop:=false;
+    for i:=1 to length(dec_float) do
+      begin
       if (dec_float[i] = ' ')  then
         begin
         u:=i; compare:=''; cnt_split:=1;
+
         repeat
           dec(u);
           compare:=concat(dec_float[u],compare);
-        until (dec_float[u - 1] = ' ') or (u = 2);
-
-        for e:=i downto 1 do
-          begin
-          save:=concat(dec_float[e],save);
-          delete(dec_float,e,1);
-        end;
-
-
-        dec_float_save:=concat(dec_float_save,save); save:='';
+        until (u = 1) or (dec_float[u - 1] = ' ');
 
         inc(cnt_split);
 
         if (compare = dec_mul) or (FloatToStr((STrToFloat(compare) + 1)) = dec_mul) or (FloatToStr((STrToFloat(dec_mul) + 1)) = compare) then
           begin
-          first:=cnt_split; last:=cnt; loop:=true;
+          first:=cnt_split; last:=cnt; loop:=true; break;
           end;
-
-        i:=0;
         end;
-    until length(dec_float) = 0;
+      end;
 
     if loop = false then
       begin
-      dec_float_save:=concat(dec_float_save,dec_mul,' ');
+      dec_float:=concat(dec_float,dec_mul,' ');
       end;
-
-    dec_float:=concat(dec_float,dec_float_save);
     end
 
   else begin
@@ -108,7 +96,8 @@ repeat
     end;
 
   inc(cnt);
-until (round(StrToFloat(dec_mul)) - StrToFloat(dec_mul) = 0) or (loop = true); //or (length(dec_res) >= 255);
+until (round(StrToFloat(dec_mul)) - StrToFloat(dec_mul) = 0) or (loop = true);
+
 
 if loop = true then
   begin
