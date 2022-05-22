@@ -65,7 +65,7 @@ repeat
         write('Green part');
 
         TextColor(White);
-        write(' is the loop forever part');
+        write(' is the forever loop part');
 
         break;
         end;
