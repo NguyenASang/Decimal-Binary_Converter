@@ -1,131 +1,96 @@
 uses crt,sysutils;
-var i,sep,cnt,first,last,split,cnt_split,u:longint;
-    s,num_bin,num_div,num_res,dec_bin,dec_mul,compare,dec_res,dec_float:ansistring;
+var i,sep,cnt,u:longint;
+    s,num_bin,num_div,num_res,dec_mul,dec_res,compare:ansistring;
     decimal,remem,wrong,negative,loop:boolean;
 
 procedure Decimal_part;
 begin
 write('.');
-loop:=false; dec_mul:='';
+loop:=false; dec_res:='';
 for i:=sep - 1 to length(s) do
   begin
-  if i < sep then dec_mul:=concat('0',dec_mul) else dec_mul:=concat(dec_mul,s[i]);
+  if i < sep then dec_res:=concat('0',dec_res) else dec_res:=concat(dec_res,s[i]);
   end;
 
-dec_res:=''; compare:=''; dec_float:=''; split:=1; cnt:=1; cnt_split:=1;
+compare:=''; cnt:=1; loop:=false;
 repeat
-  dec_bin:=dec_mul; dec_mul:=''; remem:=false;
-  for i:=length(dec_bin) downto 1 do
+  dec_mul:=dec_res; dec_res:=''; remem:=false;
+  for i:=length(dec_mul) downto 1 do
     begin
-    if (dec_bin[i] <> '.') and (i <> 1) then
+    if (dec_mul[i] <> '.') and (i <> 1) then
       begin
-      if StrToInt(dec_bin[i]) * 2 < 10 then
+      if StrToInt(dec_mul[i]) * 2 < 10 then
         begin
         if remem = true then
           begin
-          dec_mul:=concat(IntToStr(StrToInt(dec_bin[i]) * 2 + 1),dec_mul);
+          dec_res:=concat(IntToStr(StrToInt(dec_mul[i]) * 2 + 1),dec_res);
           remem:=false;
           end
 
         else begin
-          dec_mul:=concat(IntToStr(StrToInt(dec_bin[i]) * 2),dec_mul);
+          dec_res:=concat(IntToStr(StrToInt(dec_mul[i]) * 2),dec_res);
           end;
         end
 
       else begin
         if remem = true then
           begin
-          dec_mul:=concat(IntToStr((StrToInt(dec_bin[i]) * 2 + 1) mod 10),dec_mul);
+          dec_res:=concat(IntToStr((StrToInt(dec_mul[i]) * 2 + 1) mod 10),dec_res);
           end
 
         else begin
-          dec_mul:=concat(IntToStr((StrToInt(dec_bin[i]) * 2) mod 10),dec_mul); remem:=true;
+          dec_res:=concat(IntToStr((StrToInt(dec_mul[i]) * 2) mod 10),dec_res); remem:=true;
           end;
         end;
       end;
 
-    if dec_bin[i] = '.' then
+    if dec_mul[i] = '.' then
       begin
-      dec_mul:=concat('0.',dec_mul);
+      dec_res:=concat('0.',dec_res);
       end;
 
-    if (i = 1) and (remem = true) then
+    if i = 1 then
       begin
-      dec_mul[1]:='1';
-      dec_res:=concat(dec_res,'1');
-      end;
-
-    if (i = 1) and (remem = false) then
-      begin
-      dec_mul[1]:='0';
-      dec_res:=concat(dec_res,'0');
-      end;
-    end;
-
-  if length(dec_float) > 0 then
-    begin
-    i:=0; loop:=false;
-    for i:=1 to length(dec_float) do
-      begin
-      if (dec_float[i] = ' ')  then
+      if (compare = dec_res) and (cnt <> length(s) - length(num_bin)) then
         begin
-        u:=i; compare:=''; cnt_split:=1;
+        loop:=true;
 
-        repeat
-          dec(u);
-          compare:=concat(dec_float[u],compare);
-        until (u = 1) or (dec_float[u - 1] = ' ');
+        TextColor(White);
+        writeln('...');
 
-        inc(cnt_split);
+        TextColor(Red);
+        write(sLineBreak,'Note: ');
 
-        if (compare = dec_mul) or (FloatToStr((STrToFloat(compare) + 1)) = dec_mul) or (FloatToStr((STrToFloat(dec_mul) + 1)) = compare) then
+        TextColor(Green);
+        write('Green part');
+
+        TextColor(White);
+        write(' is the loop forever part');
+
+        break;
+        end;
+
+      if cnt = length(s) - length(num_bin) then
+        begin
+        compare:=dec_res; TextColor(Green);
+        end;
+
+      if remem = true then
           begin
-          first:=cnt_split; last:=cnt; loop:=true; break;
+          dec_res[1]:='1';
+          write(1);
           end;
+
+      if remem = false then
+        begin
+        dec_res[1]:='0';
+        write(0);
         end;
       end;
-
-    if loop = false then
-      begin
-      dec_float:=concat(dec_float,dec_mul,' ');
-      end;
-    end
-
-  else begin
-    dec_float:=concat(dec_float,dec_mul,' ');
     end;
 
   inc(cnt);
-until (round(StrToFloat(dec_mul)) - StrToFloat(dec_mul) = 0) or (loop = true);
-
-
-if loop = true then
-  begin
-  for i:=1 to last do
-    begin
-    if i = first then
-      begin
-      TextColor(Green);
-      write(dec_res[i]);
-      end
-
-    else write(dec_res[i]);
-    end;
-
-  TextColor(White);
-  writeln('...');
-
-  TextColor(Red);
-  write(sLineBreak,'Note: ');
-
-  TextColor(Green);
-  write('Green part');
-
-  TextColor(White);
-  write(' is the loop forever part');
-  end
-
-else write(dec_res);
+until (round(StrToFloat(dec_res)) - StrToFloat(dec_res) = 0) or (loop = true);
 end;
 
 procedure Integer_part;
@@ -196,7 +161,6 @@ for i:=1 to length(num_bin) do
       end;
     end;
   end;
-
 until (length(num_div) = 1) and (num_div ='0');
 
 write(num_res);
