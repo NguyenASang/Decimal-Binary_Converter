@@ -1,73 +1,96 @@
 uses crt,sysutils;
-var i,sep,cnt:longint;
-    s,num_bin,num_div,num_res,dec_res,dec_bin:string;
-    decimal,remem,wrong,negative:boolean;
+var i,sep,cnt,u:longint;
+    s,num_bin,num_div,num_res,dec_mul,dec_res,compare:ansistring;
+    decimal,remem,wrong,negative,loop:boolean;
 
 procedure Decimal_part;
 begin
-dec_res:='';
+write('.');
+loop:=false; dec_res:='';
 for i:=sep - 1 to length(s) do
   begin
   if i < sep then dec_res:=concat('0',dec_res) else dec_res:=concat(dec_res,s[i]);
   end;
 
-write('.');
-
+compare:=''; cnt:=1; loop:=false;
 repeat
-  dec_bin:=dec_res; dec_res:=''; remem:=false;
-  for i:=length(dec_bin) downto 1 do
+  dec_mul:=dec_res; dec_res:=''; remem:=false;
+  for i:=length(dec_mul) downto 1 do
     begin
-    if (dec_bin[i] <> '.') and (i <> 1) then
+    if (dec_mul[i] <> '.') and (i <> 1) then
       begin
-      if StrToInt(dec_bin[i]) * 2 < 10 then
+      if StrToInt(dec_mul[i]) * 2 < 10 then
         begin
         if remem = true then
           begin
-          dec_res:=concat(IntToStr(StrToInt(dec_bin[i]) * 2 + 1),dec_res);
+          dec_res:=concat(IntToStr(StrToInt(dec_mul[i]) * 2 + 1),dec_res);
           remem:=false;
           end
 
         else begin
-          dec_res:=concat(IntToStr(StrToInt(dec_bin[i]) * 2),dec_res);
+          dec_res:=concat(IntToStr(StrToInt(dec_mul[i]) * 2),dec_res);
           end;
         end
 
       else begin
         if remem = true then
           begin
-          dec_res:=concat(IntToStr((StrToInt(dec_bin[i]) * 2 + 1) mod 10),dec_res);
+          dec_res:=concat(IntToStr((StrToInt(dec_mul[i]) * 2 + 1) mod 10),dec_res);
           end
 
         else begin
-          dec_res:=concat(IntToStr((StrToInt(dec_bin[i]) * 2) mod 10),dec_res); remem:=true;
+          dec_res:=concat(IntToStr((StrToInt(dec_mul[i]) * 2) mod 10),dec_res); remem:=true;
           end;
         end;
       end;
 
-    if dec_bin[i] = '.' then
+    if dec_mul[i] = '.' then
       begin
       dec_res:=concat('0.',dec_res);
       end;
 
-    if (i = 1) and (remem = true) then
+    if i = 1 then
       begin
-      dec_res[1]:='1';
-      write(1); inc(cnt);
-      end;
+      if (compare = dec_res) and (cnt <> length(s) - length(num_bin)) then
+        begin
+        loop:=true;
 
-    if (i = 1) and (remem = false) then
-      begin
-      dec_res[1]:='0';
-      write(0); inc(cnt);
+        TextColor(White);
+        writeln('...');
+
+        TextColor(Red);
+        write(sLineBreak,'Note: ');
+
+        TextColor(Green);
+        write('Green part');
+
+        TextColor(White);
+        write(' is the loop forever part');
+
+        break;
+        end;
+
+      if cnt = length(s) - length(num_bin) then
+        begin
+        compare:=dec_res; TextColor(Green);
+        end;
+
+      if remem = true then
+          begin
+          dec_res[1]:='1';
+          write(1);
+          end;
+
+      if remem = false then
+        begin
+        dec_res[1]:='0';
+        write(0);
+        end;
       end;
     end;
 
-if cnt = 100 then
-  begin
-  write('...');   //  Temporary solution
-  end;
-
-until (round(StrToFloat(dec_res)) - StrToFloat(dec_res) = 0) or (cnt = 100);
+  inc(cnt);
+until (round(StrToFloat(dec_res)) - StrToFloat(dec_res) = 0) or (loop = true);
 end;
 
 procedure Integer_part;
@@ -138,7 +161,6 @@ for i:=1 to length(num_bin) do
       end;
     end;
   end;
-
 until (length(num_div) = 1) and (num_div ='0');
 
 write(num_res);
