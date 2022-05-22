@@ -1,5 +1,5 @@
 uses crt,sysutils;
-var i,sep,cnt,u:longint;
+var i,sep,cnt:longint;
     s,num_bin,num_div,num_res,dec_mul,dec_res,compare:ansistring;
     decimal,remem,wrong,negative,loop:boolean;
 
