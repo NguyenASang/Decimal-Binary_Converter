@@ -1,4 +1,4 @@
-uses crt,sysutils;
+uses crt,sysutils,math;
 var i,sep,cnt:longint;
     s,num_bin,num_div,num_res,dec_mul,dec_res,compare:ansistring;
     decimal,remem,wrong,negative,loop:boolean;
@@ -70,7 +70,7 @@ repeat
         break;
         end;
 
-      if cnt = length(s) - length(num_bin) then
+      if cnt = length(s) - length(IntToStr(round(Int(StrToFloat(s))))) then
         begin
         compare:=dec_res; TextColor(Green);
         end;
