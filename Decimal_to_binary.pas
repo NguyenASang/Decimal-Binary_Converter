@@ -1,7 +1,8 @@
-uses crt,sysutils,math;
+uses crt,sysutils;
 var i,sep,cnt:longint;
     s,num_bin,num_div,num_res,dec_mul,dec_res,compare:ansistring;
-    decimal,remem,wrong,negative,loop:boolean;
+    decimal,remem,negative,loop:boolean;
+    key:char;
 
 procedure Decimal_part;
 begin
@@ -70,9 +71,10 @@ repeat
         break;
         end;
 
-      if cnt = length(s) - length(IntToStr(round(Int(StrToFloat(s))))) then
+      if cnt = length(s) - sep + 1 then
         begin
-        compare:=dec_res; TextColor(Green);
+        compare:=dec_res;
+        TextColor(Green);
         end;
 
       if remem = true then
@@ -106,61 +108,62 @@ else begin
 
 num_div:=s;
 repeat
-if num_div <> s then
-  begin
-  num_bin:=num_div; num_div:='';
-  end
-
-else num_div:='';
-
-if StrToInt(num_bin[length(num_bin)]) mod 2 <> 0 then
-  begin
-  num_bin:=concat(num_bin,IntToStr(StrToInt(num_bin[length(num_bin)]) - 1));
-  delete(num_bin,length(num_bin)-1,1);
-  num_res:=concat('1',num_res);
-  end
-
-else begin
-  num_res:=concat('0',num_res);
-  end;
-
-remem:=false;
-for i:=1 to length(num_bin) do
-  begin
-  if StrToInt(num_bin[i]) mod 2 <> 0 then
+  if num_div <> s then
     begin
-    if remem = true then
-      begin
-      num_div:=concat(num_div,IntToStr((10 + StrToInt(num_bin[i])) div 2));
-      end
+    num_bin:=num_div;
+    num_div:='';
+    end
 
-    else begin
-      if (num_bin[i] = '1') and (i <> 1) then
-        begin
-        num_div:=concat(num_div,IntToStr(StrToInt(num_bin[i]) div 2));
-        end;
+  else num_div:='';
 
-      if num_bin[i] <> '1' then
-        begin
-        num_div:=concat(num_div,IntToStr(StrToInt(num_bin[i]) div 2));
-        end;
-
-      remem:=true;
-      end;
+  if StrToInt(num_bin[length(num_bin)]) mod 2 <> 0 then
+    begin
+    num_bin:=concat(num_bin,IntToStr(StrToInt(num_bin[length(num_bin)]) - 1));
+    delete(num_bin,length(num_bin)-1,1);
+    num_res:=concat('1',num_res);
     end
 
   else begin
-    if remem = true then
+    num_res:=concat('0',num_res);
+    end;
+
+  remem:=false;
+  for i:=1 to length(num_bin) do
+    begin
+    if StrToInt(num_bin[i]) mod 2 <> 0 then
       begin
-      num_div:=concat(num_div,IntToStr((10 + StrToInt(num_bin[i])) div 2));
-      remem:=false;
+      if remem = true then
+        begin
+        num_div:=concat(num_div,IntToStr((10 + StrToInt(num_bin[i])) div 2));
+        end
+
+      else begin
+        if (num_bin[i] = '1') and (i <> 1) then
+          begin
+          num_div:=concat(num_div,IntToStr(StrToInt(num_bin[i]) div 2));
+          end;
+
+        if num_bin[i] <> '1' then
+          begin
+          num_div:=concat(num_div,IntToStr(StrToInt(num_bin[i]) div 2));
+          end;
+
+        remem:=true;
+        end;
       end
 
     else begin
-      num_div:=concat(num_div,IntToStr(StrToInt(num_bin[i]) div 2));
+      if remem = true then
+        begin
+        num_div:=concat(num_div,IntToStr((10 + StrToInt(num_bin[i])) div 2));
+        remem:=false;
+        end
+
+      else begin
+        num_div:=concat(num_div,IntToStr(StrToInt(num_bin[i]) div 2));
+        end;
       end;
     end;
-  end;
 until (length(num_div) = 1) and (num_div ='0');
 
 write(num_res);
@@ -170,46 +173,93 @@ end;
 
 begin
 clrscr;
-write('Enter decimal to convert: '); readln(s);
+write('Enter decimal to convert: ');
 
-wrong:=true;
-while wrong = true do
-  begin
-  wrong:=false; negative:=false; decimal:=false;
-  for i:=1 to length(s) do
-   begin
-   if (i = 1) and (s[i] = '-') and (negative = false) then negative:=true;
+//Note: 13 = Enter | 8 = Backspace
 
-   if (i <> 1) and (s[i] = '-') or (i <> 1) and (s[i] = '-') and (negative = true) then wrong:=true;
-
-   if (s[i] = '.') and (decimal = true) then wrong:=true;
-
-   if (s[i] = '.') and (decimal = false) then decimal:=true
-   end;
-
-  if wrong = true then
+repeat
+  if length(s) = 255 then
     begin
-    write('Invalid decimal entered, re-enter: '); readln(s);
+    clrscr;
+    GotoXY(1,1);
+    write('Enter decimal to convert: ',s);
     end;
-  end;
 
-writeln(SlineBreak,'Convert to binary: ');
+  key:=readkey;
 
-if negative = true then
-  begin
-  write('-');
-  delete(s,1,1);
-  end;
+  if (key in ['0'..'9']) or (key = '-') and (length(s) = 0) or (key = '.') and (decimal = false) then
+    begin
+    if key = '-' then negative:=true;
+    if key = '.' then
+      begin
+      decimal:=true; sep:=length(s) + 1;
+      end;
 
-for i:=1 to length(s) do
-  begin
-  if s[i] = '.' then
-     begin
-     sep:=i; decimal:=true;
-     end;
+    s:=concat(s,key);
 
-  if (i = length(s)) and (decimal = false) then sep:=length(s);
-  end;
+    write(key);
+    end;
+
+  if (ord(key) = 8) and (length(s) <> 0) then
+    begin
+    if s[length(s)] = '.' then decimal:=false;
+    if s[length(s)] = '-' then negative:=false;
+
+    if WhereX = 1 then
+      begin
+      GotoXY(length(s) + 26,WhereY - 1);
+      write(' ');
+      GotoXY(length(s) + 26,WhereY - 1);
+      end
+
+    else begin
+      GotoXY(WhereX - 1,WhereY);
+      write(' ');
+      GotoXY(WhereX - 1,WhereY);
+      end;
+
+    delete(s,length(s),1)
+    end;
+
+  if (ord(key) = 13) then
+    begin
+    writeln;
+    writeln(slineBreak,'Convert to binary: ');
+
+    if decimal = true then
+      begin
+      i:=length(s) + 2;
+      repeat
+        dec(i);
+      until (s[i - 1] in ['1'..'9']);
+
+      delete(s,i,length(s) - i + 1);
+
+      if sep = i then decimal:=false;
+      end;
+
+    if decimal = false then sep:=length(s);
+
+    if negative = true then
+      begin
+      write('-');
+      delete(s,1,1);
+      dec(sep);
+      end;
+
+    if (s[1] = '0') then
+      begin
+      i:=0;
+      repeat
+       inc(i);
+      until (s[i + 1] in ['1'..'9']) or (s[i] = '0') and (s[i + 1] = '.');
+
+      if (s[i] = '0') and (s[i + 1] = '.') then dec(i);
+
+      delete(s,1,i); sep:=sep - i;
+      end;
+    end;
+until ord(key) = 13;
 
 Integer_part;
 
