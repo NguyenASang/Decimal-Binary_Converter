@@ -52,7 +52,7 @@ repeat
 
     if i = 1 then
       begin
-      if (compare = dec_res) and (cnt <> length(s) - length(num_bin)) then
+      if (compare = dec_res) and (cnt <> length(s) - sep + 1) then
         begin
         loop:=true;
 
