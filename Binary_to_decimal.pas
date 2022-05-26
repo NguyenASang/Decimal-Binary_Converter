@@ -1,7 +1,8 @@
 uses crt,sysutils;
 var s,result,res,digit_sum,digit_plus,dividend,divisor,power,sum_power,ano_sum_power,num:ansistring;
     e,f,i,u,t,w,cnt,sep:longint;
-    decimal,esc,remem,wrong,negative:boolean;
+    decimal,esc,remem,negative:boolean;
+    key:char;
 
 procedure Decimal_part;
 begin
@@ -262,44 +263,95 @@ end;
 
 begin
 clrscr;
-write('Enter the binary to convert: '); readln(s);
+write('Enter the binary to convert: ');
 
-wrong:=true;
-while wrong = true do
-  begin
-  wrong:=false; decimal:=false; negative:=false;
-  for i:=1 to length(s) do
+//Note: 13 = Enter | 8 = Backspace
+
+repeat
+  if length(s) = 255 then
     begin
-
-    if (s[i] = '-') and (negative = false) and (i = 1) then negative:=true
-    else if (s[i] = '-') and (negative = true) or (s[i] = '-') and (i <> 1) then wrong:=true;
-
-    if (s[i] = '.') and (decimal = false) then decimal:=true
-    else if (s[i] = '.') and (decimal = true) then wrong:=true;
-
-    if (s[i] <> '.') and (s[i] <> '0') and (s[i] <> '1') and (s[i] <> '-') then wrong:=true;
+    clrscr;
+    GotoXY(1,1);
+    write('Enter binary to convert: ',s);
     end;
 
-  if wrong = true then
+  key:=readkey;
+
+  if (key in ['0'..'1']) or (key = '-') and (length(s) = 0) or (key = '.') and (decimal = false) then
     begin
-    write('Invalid binary entered, re-enter: '); readln(s);
+    if key = '-' then negative:=true;
+    if key = '.' then
+      begin
+      decimal:=true; sep:=length(s) + 1;
+      end;
+
+    s:=concat(s,key);
+
+    write(key);
     end;
-  end;
 
-writeln(sLineBreak,'Convert to decimal: ');
+  if (ord(key) = 8) and (length(s) <> 0) then
+    begin
+    if s[length(s)] = '.' then decimal:=false;
+    if s[length(s)] = '-' then negative:=false;
 
-for i:=1 to length(s) do
-  begin
-  if s[i] = '.' then sep:=i;
-  end;
+    if WhereX = 1 then
+      begin
+      GotoXY(length(s) + 26,WhereY - 1);
+      write(' ');
+      GotoXY(length(s) + 26,WhereY - 1);
+      end
 
-if negative = true then
-  begin
-  write('-');
-  delete(s,1,1);
-  end;
+    else begin
+      GotoXY(WhereX - 1,WhereY);
+      write(' ');
+      GotoXY(WhereX - 1,WhereY);
+      end;
 
-if decimal = true then u:=sep - 1 else u:=length(s);
+    delete(s,length(s),1);
+    end;
+
+  if (ord(key) = 13) then
+    begin
+    writeln;
+    writeln(slineBreak,'Convert to decimal: ');
+
+    if decimal = true then
+      begin
+      i:=length(s) + 2;
+      repeat
+        dec(i);
+      until (s[i - 1] = '1');
+
+      delete(s,i,length(s) - i + 1);
+
+      if sep = i then decimal:=false;
+      end;
+
+    if decimal = false then sep:=length(s);
+
+    if negative = true then
+      begin
+      write('-');
+      delete(s,1,1);
+      dec(sep);
+      end;
+
+    if (s[1] = '0') then
+      begin
+      i:=0;
+      repeat
+       inc(i);
+      until (s[i + 1] = '1') or (s[i] = '0') and (s[i + 1] = '.');
+
+      if (s[i] = '0') and (s[i + 1] = '.') then dec(i);
+
+      delete(s,1,i); sep:=sep - i;
+      end;
+
+    u:=sep;
+    end;
+until ord(key) = 13;
 
 Integer_part;
 
