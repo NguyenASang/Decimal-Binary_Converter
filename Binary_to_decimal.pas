@@ -263,7 +263,14 @@ end;
 
 begin
 clrscr;
-write('Enter the binary to convert: ');
+write('Enter binary to convert: ');
+
+GotoXY(1,3);
+TextColor(yellow);
+write('Tip: ');
+TextColor(White);
+write('Ctrl + C = Copy | Left click = Paste');
+GotoXY(27,1);
 
 //Note: 13 = Enter | 8 = Backspace
 
@@ -277,7 +284,13 @@ repeat
 
   key:=readkey;
 
-  if (key in ['0'..'1']) or (key = '-') and (length(s) = 0) or (key = '.') and (decimal = false) then
+  if (key <> '') and (length(s) = 0) then
+    begin
+    clrscr;
+    write('Enter binary to convert: ');
+    end;
+
+  if (key in ['0'..'1']) or (key = '-') and (length(s) = 0) or (key = '.') and (length(s) > 0) and (decimal = false) then
     begin
     if key = '-' then negative:=true;
     if key = '.' then
@@ -293,13 +306,14 @@ repeat
   if (ord(key) = 8) and (length(s) <> 0) then
     begin
     if s[length(s)] = '.' then decimal:=false;
+
     if s[length(s)] = '-' then negative:=false;
 
     if WhereX = 1 then
       begin
-      GotoXY(length(s) + 26,WhereY - 1);
+      GotoXY(26 + length(s),WhereY - 1);
       write(' ');
-      GotoXY(length(s) + 26,WhereY - 1);
+      GotoXY(26 + length(s),WhereY - 1);
       end
 
     else begin
