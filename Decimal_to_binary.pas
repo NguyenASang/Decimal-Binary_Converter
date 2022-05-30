@@ -175,9 +175,17 @@ begin
 clrscr;
 write('Enter decimal to convert: ');
 
+GotoXY(1,3);
+TextColor(yellow);
+write('Tip: ');
+TextColor(White);
+write('Ctrl + C = Copy | Left click = Paste');
+GotoXY(27,1);
+
 //Note: 13 = Enter | 8 = Backspace
 
 repeat
+
   if length(s) = 255 then
     begin
     clrscr;
@@ -187,7 +195,13 @@ repeat
 
   key:=readkey;
 
-  if (key in ['0'..'9']) or (key = '-') and (length(s) = 0) or (key = '.') and (decimal = false) then
+  if (key <> '') and (length(s) = 0) then
+    begin
+    clrscr;
+    write('Enter decimal to convert: ');
+    end;
+
+  if (key in ['0'..'9']) or (key = '-') and (length(s) = 0) or (key = '.') and (length(s) > 0) and (decimal = false) then
     begin
     if key = '-' then negative:=true;
     if key = '.' then
