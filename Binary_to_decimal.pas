@@ -6,7 +6,8 @@ var s,result,res,digit_sum,digit_plus,dividend,divisor,power,sum_power,ano_sum_p
 
 procedure Decimal_part;
 begin
-u:=0; digit_sum:='0.0'; w:=0; res:='';
+u:=0;
+res:=''; result:=''; digit_sum:='0.0';
 for i:=sep + 1 to length(s) do
   begin
   if length(res) = 0 then dividend:='1'
@@ -15,7 +16,8 @@ for i:=sep + 1 to length(s) do
     dividend:=res; res:='';
     end;
 
-  remem:=false; w:=0; esc:=false;
+  w:=0;
+  remem:=false; esc:=false;
   while esc = false do
     begin
     inc(w);
@@ -120,7 +122,9 @@ for i:=sep + 1 to length(s) do
               end;
             end
 
-          else result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])),result);
+          else begin
+            result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])),result);
+            end;
           end
 
         else begin
@@ -138,7 +142,9 @@ for i:=sep + 1 to length(s) do
               end;
             end
 
-          else result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])) mod 10),result);
+          else begin
+            result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])) mod 10),result);
+            end;
 
           remem:=true;
           end;
@@ -149,7 +155,8 @@ for i:=sep + 1 to length(s) do
     end;
   end;
 
-esc:=false; i:=length(result);
+esc:=false;
+i:=length(result);
 repeat
   if result[i] = '0' then delete(result,i,1);
   if result[i - 1] <> '0' then esc:=true else esc:=false;
@@ -161,7 +168,7 @@ end;
 
 procedure Integer_part;
 begin
-w:=u; num:='0';
+w:=u - 1; num:='0';
 for i:=0 to u - 1 do
   begin
   dec(w);
@@ -191,7 +198,10 @@ for i:=0 to u - 1 do
           end
 
         else begin
-          if remem = true then sum_power:=concat(IntToStr((StrToInt(power[f]) * 2 + 1) mod 10),sum_power)
+          if remem = true then
+            begin
+            sum_power:=concat(IntToStr((StrToInt(power[f]) * 2 + 1) mod 10),sum_power);
+            end
 
           else begin
             sum_power:=concat(IntToStr((StrToInt(power[f]) * 2) mod 10),sum_power);
@@ -261,16 +271,20 @@ write(num);
 if decimal = true then Decimal_part;
 end;
 
+Procedure Input;
 begin
 clrscr;
 write('Enter binary to convert: ');
 
 GotoXY(1,3);
+
 TextColor(yellow);
 write('Tip: ');
+
 TextColor(White);
 write('Ctrl + C = Copy | Left click = Paste');
-GotoXY(27,1);
+
+GotoXY(26,1);
 
 //Note: 13 = Enter | 8 = Backspace
 
@@ -284,12 +298,6 @@ repeat
 
   key:=readkey;
 
-  if (key <> '') and (length(s) = 0) then
-    begin
-    clrscr;
-    write('Enter binary to convert: ');
-    end;
-
   if (key in ['0'..'1']) or (key = '-') and (length(s) = 0) or (key = '.') and (length(s) > 0) and (decimal = false) then
     begin
     if key = '-' then negative:=true;
@@ -301,6 +309,12 @@ repeat
     s:=concat(s,key);
 
     write(key);
+    end;
+
+  if length(s) = 1 then
+    begin
+    clrscr;
+    write('Enter binary to convert: ',s);
     end;
 
   if (ord(key) = 8) and (length(s) <> 0) then
@@ -325,10 +339,9 @@ repeat
     delete(s,length(s),1);
     end;
 
-  if (ord(key) = 13) then
+  if ord(key) = 13 then
     begin
-    writeln;
-    writeln(slineBreak,'Convert to decimal: ');
+    writeln(sLineBreak,slineBreak,'Convert to decimal: ');
 
     if decimal = true then
       begin
@@ -368,6 +381,31 @@ repeat
 until ord(key) = 13;
 
 Integer_part;
+end;
+
+begin
+repeat
+  Input;
+
+  GotoXY(1,WhereY + 2);
+  write('Press any key to ');
+
+  TextColor(green);
+  write('back');
+
+  TextColor(White);
+  write(' | Esc to ');
+
+  TextColor(Red);
+  write('exit');
+
+  TextColor(White);
+
+  decimal:=false; negative:=false;
+  s:='';
+until ord(readkey) = 27;
+
+exit;
 
 readln;
 end.
