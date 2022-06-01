@@ -7,7 +7,8 @@ var i,sep,cnt:longint;
 procedure Decimal_part;
 begin
 write('.');
-loop:=false; dec_res:='';
+
+dec_res:=''; dec_mul:=''; compare:='';
 for i:=sep - 1 to length(s) do
   begin
   if i < sep then dec_res:=concat('0',dec_res) else dec_res:=concat(dec_res,s[i]);
@@ -40,7 +41,8 @@ repeat
           end
 
         else begin
-          dec_res:=concat(IntToStr((StrToInt(dec_mul[i]) * 2) mod 10),dec_res); remem:=true;
+          dec_res:=concat(IntToStr((StrToInt(dec_mul[i]) * 2) mod 10),dec_res);
+          remem:=true;
           end;
         end;
       end;
@@ -97,6 +99,7 @@ end;
 
 procedure Integer_part;
 begin
+num_bin:=''; num_res:='';
 if decimal = true then
   begin
   for i:=1 to sep-1 do num_bin:=concat(num_bin,s[i]);
@@ -108,18 +111,14 @@ else begin
 
 num_div:=s;
 repeat
-  if num_div <> s then
-    begin
-    num_bin:=num_div;
-    num_div:='';
-    end
+  if num_div <> s then num_bin:=num_div;
 
-  else num_div:='';
+  num_div:='';
 
   if StrToInt(num_bin[length(num_bin)]) mod 2 <> 0 then
     begin
     num_bin:=concat(num_bin,IntToStr(StrToInt(num_bin[length(num_bin)]) - 1));
-    delete(num_bin,length(num_bin)-1,1);
+    delete(num_bin,length(num_bin) - 1,1);
     num_res:=concat('1',num_res);
     end
 
@@ -171,21 +170,24 @@ write(num_res);
 if decimal = true then Decimal_part;
 end;
 
+procedure Input;
 begin
 clrscr;
 write('Enter decimal to convert: ');
 
 GotoXY(1,3);
+
 TextColor(yellow);
 write('Tip: ');
+
 TextColor(White);
 write('Ctrl + C = Copy | Left click = Paste');
+
 GotoXY(27,1);
 
 //Note: 13 = Enter | 8 = Backspace
 
 repeat
-
   if length(s) = 255 then
     begin
     clrscr;
@@ -195,15 +197,10 @@ repeat
 
   key:=readkey;
 
-  if (key <> '') and (length(s) = 0) then
-    begin
-    clrscr;
-    write('Enter decimal to convert: ');
-    end;
-
   if (key in ['0'..'9']) or (key = '-') and (length(s) = 0) or (key = '.') and (length(s) > 0) and (decimal = false) then
     begin
     if key = '-' then negative:=true;
+
     if key = '.' then
       begin
       decimal:=true; sep:=length(s) + 1;
@@ -214,9 +211,16 @@ repeat
     write(key);
     end;
 
+  if length(s) = 1 then
+    begin
+    clrscr;
+    write('Enter decimal to convert: ',s);
+    end;
+
   if (ord(key) = 8) and (length(s) <> 0) then
     begin
     if s[length(s)] = '.' then decimal:=false;
+
     if s[length(s)] = '-' then negative:=false;
 
     if WhereX = 1 then
@@ -232,20 +236,19 @@ repeat
       GotoXY(WhereX - 1,WhereY);
       end;
 
-    delete(s,length(s),1)
+    delete(s,length(s),1);
     end;
 
-  if (ord(key) = 13) then
+  if ord(key) = 13 then
     begin
-    writeln;
-    writeln(slineBreak,'Convert to binary: ');
+    writeln(sLineBreak,slineBreak,'Convert to binary: ');
 
     if decimal = true then
       begin
       i:=length(s) + 2;
       repeat
         dec(i);
-      until (s[i - 1] in ['1'..'9']);
+      until s[i - 1] in ['1'..'9'];
 
       delete(s,i,length(s) - i + 1);
 
@@ -261,11 +264,11 @@ repeat
       dec(sep);
       end;
 
-    if (s[1] = '0') then
+    if s[1] = '0' then
       begin
       i:=0;
       repeat
-       inc(i);
+        inc(i);
       until (s[i + 1] in ['1'..'9']) or (s[i] = '0') and (s[i + 1] = '.');
 
       if (s[i] = '0') and (s[i + 1] = '.') then dec(i);
@@ -276,6 +279,31 @@ repeat
 until ord(key) = 13;
 
 Integer_part;
+end;
+
+begin
+repeat
+  Input;
+
+  GotoXY(1,WhereY + 2);
+  write('Press any key to ');
+
+  TextColor(Green);
+  write('back');
+
+  TextColor(White);
+  write(' | Esc to ');
+
+  TextColor(Red);
+  write('exit');
+
+  TextColor(White);
+
+  decimal:=false; negative:=false; loop:=false;
+  s:='';
+until ord(readkey) = 27;
+
+exit;
 
 readln;
 end.
