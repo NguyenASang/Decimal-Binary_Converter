@@ -100,14 +100,7 @@ end;
 procedure Integer_part;
 begin
 num_bin:=''; num_res:='';
-if decimal = true then
-  begin
-  for i:=1 to sep-1 do num_bin:=concat(num_bin,s[i]);
-  end
-
-else begin
-  for i:=1 to sep do num_bin:=concat(num_bin,s[i]);
-  end;
+for i:=1 to sep - 1 do num_bin:=concat(num_bin,s[i]);
 
 num_div:=s;
 repeat
@@ -181,7 +174,7 @@ TextColor(yellow);
 write('Tip: ');
 
 TextColor(White);
-write('Ctrl + C = Copy | Left click = Paste');
+write('Ctrl + C = Copy | Right click = Paste');
 
 GotoXY(27,1);
 
@@ -241,40 +234,37 @@ repeat
 
   if ord(key) = 13 then
     begin
-    writeln(sLineBreak,slineBreak,'Convert to binary: ');
+    if negative  = true then delete(s,1,1);
 
-    if decimal = true then
+    if s[length(s)] = '.' then delete(s,length(s),1);
+
+    if s[length(s)] = '0' then
       begin
-      i:=length(s) + 2;
+      i:=length(s) + 1;
       repeat
         dec(i);
+        delete(s,i,1);
       until s[i - 1] in ['1'..'9'];
-
-      delete(s,i,length(s) - i + 1);
-
-      if sep = i then decimal:=false;
       end;
 
-    if decimal = false then sep:=length(s);
-
-    if negative = true then
+    if (s[1] = '0') and (s[2] <> '.') then
       begin
-      write('-');
-      delete(s,1,1);
-      dec(sep);
-      end;
-
-    if s[1] = '0' then
-      begin
-      i:=0;
+      i:=1;
       repeat
-        inc(i);
-      until (s[i + 1] in ['1'..'9']) or (s[i] = '0') and (s[i + 1] = '.');
-
-      if (s[i] = '0') and (s[i + 1] = '.') then dec(i);
-
-      delete(s,1,i); sep:=sep - i;
+        delete(s,i,1);
+      until (s[i] = '0') and (s[i + 1] = '.') or (s[i] in ['1'..'9']);
       end;
+
+    if decimal = false then sep:=length(s) + 1
+
+    else begin
+      for i:=1 to length(s) do
+        begin
+        if s[i] = '.' then sep:=i;
+        end;
+      end;
+
+    writeln(sLineBreak,slineBreak,'Convert to decimal: ');
     end;
 until ord(key) = 13;
 
