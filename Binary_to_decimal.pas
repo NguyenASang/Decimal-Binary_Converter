@@ -344,7 +344,7 @@ repeat
 
     if s[length(s)] = '.' then delete(s,length(s),1);
 
-    if (length(s) > 1) and (s[length(s)] = '0') then
+    if (length(s) > 1) and (decimal = true) and (s[length(s)] = '0') then
       begin
       i:=length(s) + 1;
       repeat
