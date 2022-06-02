@@ -238,16 +238,17 @@ repeat
 
     if s[length(s)] = '.' then delete(s,length(s),1);
 
-    if s[length(s)] = '0' then
+    if (length(s) > 1) and (s[length(s)] = '0') then
       begin
       i:=length(s) + 1;
       repeat
         dec(i);
+        if s[i] = '.' then decimal:=false;
         delete(s,i,1);
       until s[i - 1] in ['1'..'9'];
       end;
 
-    if (s[1] = '0') and (s[2] <> '.') then
+    if (length(s)> 1) and (s[1] = '0') and (s[2] <> '.') then
       begin
       i:=1;
       repeat
