@@ -168,8 +168,9 @@ end;
 
 procedure Integer_part;
 begin
-w:=u - 1; num:='0';
-for i:=0 to u - 1 do
+w:=sep - 1; 
+num:='0';
+for i:=0 to sep - 2 do
   begin
   dec(w);
   if s[i + 1] <> '0' then
@@ -282,7 +283,7 @@ TextColor(yellow);
 write('Tip: ');
 
 TextColor(White);
-write('Ctrl + C = Copy | Left click = Paste');
+write('Ctrl + C = Copy | Right click = Paste');
 
 GotoXY(26,1);
 
@@ -301,10 +302,8 @@ repeat
   if (key in ['0'..'1']) or (key = '-') and (length(s) = 0) or (key = '.') and (length(s) > 0) and (decimal = false) then
     begin
     if key = '-' then negative:=true;
-    if key = '.' then
-      begin
-      decimal:=true; sep:=length(s) + 1;
-      end;
+
+    if key = '.' then decimal:=true;
 
     s:=concat(s,key);
 
@@ -341,42 +340,37 @@ repeat
 
   if ord(key) = 13 then
     begin
-    writeln(sLineBreak,slineBreak,'Convert to decimal: ');
+    if negative  = true then delete(s,1,1);
 
-    if decimal = true then
+    if s[length(s)] = '.' then delete(s,length(s),1);
+
+    if s[length(s)] = '0' then
       begin
-      i:=length(s) + 2;
+      i:=length(s) + 1;
       repeat
         dec(i);
-      until (s[i - 1] = '1');
-
-      delete(s,i,length(s) - i + 1);
-
-      if sep = i then decimal:=false;
+        delete(s,i,1);
+      until s[i - 1] = '1';
       end;
 
-    if decimal = false then sep:=length(s);
-
-    if negative = true then
+    if (s[1] = '0') and (s[2] <> '.') then
       begin
-      write('-');
-      delete(s,1,1);
-      dec(sep);
-      end;
-
-    if (s[1] = '0') then
-      begin
-      i:=0;
+      i:=1;
       repeat
-       inc(i);
-      until (s[i + 1] = '1') or (s[i] = '0') and (s[i + 1] = '.');
-
-      if (s[i] = '0') and (s[i + 1] = '.') then dec(i);
-
-      delete(s,1,i); sep:=sep - i;
+        delete(s,i,1);
+      until (s[i] = '0') and (s[i + 1] = '.') or (s[i] = '1');
       end;
 
-    u:=sep;
+    if decimal = false then sep:=length(s) + 1
+
+    else begin
+      for i:=1 to length(s) do
+        begin
+        if s[i] = '.' then sep:=i;
+        end;
+      end;
+
+    writeln(sLineBreak,slineBreak,'Convert to decimal: ');
     end;
 until ord(key) = 13;
 
