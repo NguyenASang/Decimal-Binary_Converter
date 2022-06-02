@@ -382,8 +382,7 @@ begin
 repeat
   Input;
 
-  GotoXY(1,WhereY + 2);
-  write('Press any key to ');
+  write(sLineBreak,sLineBreak,'Press any key to ');
 
   TextColor(green);
   write('back');
