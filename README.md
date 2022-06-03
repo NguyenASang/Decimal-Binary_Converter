@@ -20,6 +20,6 @@ Known issue:
 - Download and install [Free Pascal (FPC)](https://www.freepascal.org/download.html)
 - Clone this repo 
 ```sh
-https://github.com/NguyenASang/Decimal-Binary_Converter.git
+git clone https://github.com/NguyenASang/Decimal-Binary_Converter.git
 ```
 - Run FPC and open the .pas files you cloned
