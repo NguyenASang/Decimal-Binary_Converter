@@ -9,7 +9,7 @@ A high precision decimal/binary converter written in Free Pascal
 - Bypass the character limit when you type input
 - Automatically remove unnecessary parts in output and input (EG: 0001.100 -> 1.1)
 
-## How to use
+## Usage
 ### Normal user
 You can download latest version [here](https://github.com/NguyenASang/Decimal-Binary_Converter/releases)
 
