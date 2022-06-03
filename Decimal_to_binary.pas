@@ -218,9 +218,9 @@ repeat
 
     if WhereX = 1 then
       begin
-      GotoXY(length(s) + 26,WhereY - 1);
+      GotoXY((length(s) + 26) div (WhereY - 1),WhereY - 1);
       write(' ');
-      GotoXY(length(s) + 26,WhereY - 1);
+      GotoXY((length(s) + 26) div (WhereY - 1),WhereY - 1);
       end
 
     else begin
