@@ -1,5 +1,5 @@
 ## About
-High precision decimal/binary converter
+A high precision decimal/binary converter written in Free Pascal
 
 ## Features
 - Support negative, positive, real numbers
