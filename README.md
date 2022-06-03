@@ -5,7 +5,7 @@ A high precision decimal/binary converter written in Free Pascal
 - Support negative, positive, real numbers
 - Quick calculation
 - High precision (no rounding, E +, E, E -, ...)
-- Highlight the loop section for special cases when converting to binary
+- Highlight the loop section for special cases when converting to binary. For more [information](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-)
 - Bypass the character limit when you type input
 - Automatically remove unnecessary parts in output and input (EG: 0001.100 -> 1.1)
 
