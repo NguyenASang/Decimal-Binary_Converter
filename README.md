@@ -1,13 +1,25 @@
-## About this Converter
-This is a decimal/binary converter, code in _pascal_.
+## About
+A high precision Decimal/Binary converter written in Free Pascal
 
-Here is the status:
-| Converter | Accuration |
-|:---------:|:----------:|
-| [Binary -> Decimal](https://github.com/NguyenASang/Decimal-Binary_Converter/releases/download/v3.2.1/Binary_to_decimal.exe) | ~ 100% |
-| [Decimal -> Binary](https://github.com/NguyenASang/Decimal-Binary_Converter/releases/download/v3.2.1/Decimal_to_binary.exe) | ~ 100% |
+## Features
+- Support negative, positive, real numbers
+- Quick calculation
+- High precision (no rounding, E +, E, E -, ...)
+- Highlight the loop section for special cases when converting to binary. For more [information](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-)
+- Automatically remove unnecessary parts in output and input (EG: 0001.100 -> 1.1)
+- Bypass the character limit when you type input. For more [information](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-input-limit-in-free-pascals-console-)
 
-## Why do I create this repository ?
-I create this to improve the accuracy of this Converter. If you want to open a PR or report bugs feel free to do it.
+## Usage
+### Normal user
+You can download latest version [here](https://github.com/NguyenASang/Decimal-Binary_Converter/releases)
 
-If you like my work, **please** star this repository, thank you ;)
+Known issue:
+- Honestly, I don't know why the browser thinks the exe file is unsafe. When you run the .pas file with FPC (Free Pascal) it will generate an exe file and I use that exe file to upload.
+
+### Developer
+- Download and install [Free Pascal (FPC)](https://www.freepascal.org/download.html)
+- Clone this repo 
+```sh
+git clone https://github.com/NguyenASang/Decimal-Binary_Converter.git
+```
+- Run FPC and open the .pas files you cloned
