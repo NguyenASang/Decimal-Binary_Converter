@@ -236,7 +236,11 @@ repeat
     begin
     if negative  = true then delete(s,1,1);
 
-    if s[length(s)] = '.' then delete(s,length(s),1);
+    if s[length(s)] = '.' then 
+      begin
+      decimal:=false;
+      delete(s,length(s),1);
+      end;
 
     if (length(s) > 1) and (decimal = true) and (s[length(s)] = '0') then
       begin
