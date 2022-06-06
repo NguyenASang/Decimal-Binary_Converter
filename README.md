@@ -2,12 +2,13 @@
 A high precision Decimal/Binary converter written in Free Pascal
 
 ## Features
-- Support negative, positive, real numbers
+- User - friendly interface
+- Support all types of numbers
 - Quick calculation
-- High precision (no rounding, E +, E, E -, ...)
-- Highlight the loop section for special cases when converting to binary. For more [information](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-)
+- High precision (no rounding, E notation,...)
+- Highlight the loop section for special cases when converting to binary. Learn [more](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-)
 - Automatically remove unnecessary parts in output and input (EG: 0001.100 -> 1.1)
-- Bypass the character limit when you type input. For more [information](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-input-limit-in-free-pascals-console-)
+- Bypass the character limit when you type input. Learn [more](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-input-limit-in-free-pascals-console-)
 
 ## Usage
 ### Normal user
