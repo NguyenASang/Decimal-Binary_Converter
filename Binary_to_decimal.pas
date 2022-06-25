@@ -324,9 +324,9 @@ repeat
 
     if WhereX = 1 then
       begin
-      GotoXY(26 + length(s),WhereY - 1);
+      GotoXY((length(s) + 25) div (WhereY - 1),WhereY - 1);
       write(' ');
-      GotoXY(26 + length(s),WhereY - 1);
+      GotoXY((length(s) + 25) div (WhereY - 1),WhereY - 1);
       end
 
     else begin
@@ -342,7 +342,7 @@ repeat
     begin
     if negative  = true then delete(s,1,1);
 
-    if s[length(s)] = '.' then 
+    if s[length(s)] = '.' then
       begin
       decimal:=false;
       delete(s,length(s),1);
