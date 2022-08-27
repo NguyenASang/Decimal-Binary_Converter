@@ -1,13 +1,150 @@
-uses crt,sysutils;
-var s,result,res,digit_sum,digit_plus,dividend,divisor,power,sum_power,ano_sum_power,num:ansistring;
-    e,f,i,u,t,w,cnt,sep:longint;
-    decimal,esc,remem,negative:boolean;
-    key:char;
+uses keyboard, process, regexpr, strutils, sysutils, windows;
 
-procedure Decimal_part;
+const Green       = $2;
+      LightYellow = $E;
+      Red         = $4;
+      White       = $7;
+
+var s, result, res, digit_sum, digit_plus, dividend, divisor, num_res, num_mul: ansistring;
+    decimal, esc, remem, negative, ctrl_c: boolean;
+    e, f, i, u, t, w, cnt, sep: longint;
+    pre_pos: coord;
+    key: char;
+
+Function WhereXY: coord;
+var cursor_pos: TConsoleScreenBufferInfo;
 begin
-u:=0;
+GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), cursor_pos);
+WhereXY:=cursor_pos.dwCursorPosition;
+end;
+
+Procedure GoToXY(x, y: longint);
+var cursor_pos: coord;
+begin
+cursor_pos.x:=x;
+cursor_pos.y:=y;
+SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor_pos);
+end;
+
+Function TextColor(Color: Byte): ansistring;
+var ConsoleInfo: TConsoleScreenBufferInfo;
+begin
+SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Color);
+TextColor:='';
+end;
+
+Function Readkey: char;
+var k: TKeyEvent;
+begin
+InitKeyBoard;
+  k:=TranslateKeyEvent(GetKeyEvent);
+  readkey:=GetKeyEventChar(k);
+DoneKeyBoard;
+end;
+
+Function ScreenXY: coord;
+var ScreenSize: TConsoleScreenBufferInfo;
+begin
+GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), ScreenSize);
+ScreenXY:=ScreenSize.dwSize;
+end;
+
+Procedure Clear(start_x, start_y, area, end_x, end_y: longint);
+var dwNumWritten: dword;
+    pos: coord;
+begin
+pos.x:=start_x;
+pos.y:=start_y;
+FillConsoleOutputCharacter(GetStdHandle(STD_OUTPUT_HANDLE), ' ', area, pos, &dwNumWritten);
+GotoXY(end_x, end_y);
+end;
+
+Function Regex(str_match, reg: ansistring): boolean;
+var expr: TRegExpr;
+begin
+expr:=TRegExpr.Create;
+expr.Expression:=reg;
+
+if expr.Exec(str_match) then Regex:=true
+else Regex:=false;
+
+expr.Free;
+end;
+
+Function PasteFromClip: ansistring;
+var hClipData: handle;
+    StrData: pchar;
+begin
+OpenClipboard(0);
+  hClipdata:=GetClipboardData(CF_TEXT);
+  StrData:=GlobalLock(hClipData);
+  GlobalUnlock(hClipData);
+CloseClipboard;
+
+if (Regex(strpas(StrData), '^[-]?(([01]+(\.[01]*)?)|(\.[01]+))$') = false) or (pos('.', strpas(strData)) <> 0) and (decimal = true) or (pos('-', strpas(strData)) <> 0) and ((negative = true) or (length(s) <> 0)) then
+  begin
+  pre_pos:=WhereXY;
+
+  write(TextColor(Red), #13#10#13#10'Warning: ');
+
+  write(TextColor(White), 'Your clipboard contains invalid characters');
+
+  repeat until readkey = #13; // <- Alternative to readln
+
+  Clear(pre_pos.x, pre_pos.y, ScreenXY.x * 3, pre_pos.x, pre_pos.y);
+
+  PasteFromClip:='';
+  end
+
+else PasteFromClip:=Strpas(strdata);
+end;
+
+Procedure CopyToClip;
+var pchData, StrData: pchar;
+    hClipData: HGlobal;
+begin
+if decimal = true then result:=concat(num_res, '.', result) else result:=num_res;
+
+Openclipboard(0);
+  EmptyClipboard;
+
+  strData:=Stralloc(length(result) + 1);
+  StrPCopy(strData, result);
+
+  hClipData:=GlobalAlloc(GMEM_MOVEABLE, length(strData) + 1);
+  pchData:=GlobalLock(hClipData);
+  strcopy(pchData, LPCSTR(StrData));
+  GlobalUnlock(hClipData);
+
+  SetClipboardData(CF_TEXT, hclipData);
+CloseClipboard;
+
+Clear(0, WhereXY.y - 2, ScreenXY.x, 0, WhereXY.y - 2);
+
+write(TextColor(Green), 'Status: ');
+
+write(TextColor(LightYellow), 'Copied');
+end;
+
+Function HandlerRoutine(dwCtrlType: DWORD): WINBOOL; stdcall;
+begin
+if (dwCtrlType = CTRL_C_EVENT) and (ctrl_c = true) then CopyToClip;
+end;
+
+Function New_Terminal: boolean;
+var command_res: ansistring;
+begin
+runcommand('cmd', ['/c', 'tasklist /v /fi "ImageName eq WindowsTerminal.exe"'], command_res);
+if pos(ParamStr(0), command_res) <> 0 then New_Terminal:=true else New_Terminal:=false;
+end;
+
+Procedure Decimal_part;
+begin
+write('.');
+
 res:=''; result:=''; digit_sum:='0.0';
+u:=0;
+
 for i:=sep + 1 to length(s) do
   begin
   if length(res) = 0 then dividend:='1'
@@ -27,43 +164,43 @@ for i:=sep + 1 to length(s) do
         begin
         if remem = false then
           begin
-          res:=concat(res,IntToStr(StrToInt(dividend[w]) div 2)); remem:=true;
-          if w = length(dividend) then dividend:=concat(dividend,'1');
+          res:=concat(res, IntToStr(StrToInt(dividend[w]) div 2)); remem:=true;
+          if w = length(dividend) then dividend:=concat(dividend, '1');
           end
 
         else begin
           if w <> length(dividend) then
             begin
-            res:=concat(res,IntToStr((10 + StrToInt(dividend[w])) div 2));
+            res:=concat(res, IntToStr((10 + StrToInt(dividend[w])) div 2));
             if (10 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
             end
 
           else begin
-            res:=concat(res,IntToStr((9 + StrToInt(dividend[w])) div 2));
+            res:=concat(res, IntToStr((9 + StrToInt(dividend[w])) div 2));
             if (9 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
             end;
           end;
         end
 
       else begin
-        if remem = false then res:=concat(res,IntToStr(StrToInt(dividend[w]) div 2))
+        if remem = false then res:=concat(res, IntToStr(StrToInt(dividend[w]) div 2))
 
         else begin
           if w <> length(dividend) then
             begin
-            res:=concat(res,IntToStr((10 + StrToInt(dividend[w])) div 2));
+            res:=concat(res, IntToStr((10 + StrToInt(dividend[w])) div 2));
             if (10 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
             end
 
           else begin
-            res:=concat(res,IntToStr((9 + StrToInt(dividend[w])) div 2));
+            res:=concat(res, IntToStr((9 + StrToInt(dividend[w])) div 2));
             if (9 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
             end;
           end;
         end;
       end;
 
-    if dividend[w] = '.' then res:=concat(res,'.');
+    if dividend[w] = '.' then res:=concat(res, '.');
 
     if w + 1 > length(dividend) then
       begin
@@ -75,7 +212,7 @@ for i:=sep + 1 to length(s) do
 
       if cnt = 0 then
         begin
-        for w:=length(res) downto 2 do res:=concat(res,res[w]);
+        for w:=length(res) downto 2 do res:=concat(res, res[w]);
         res[2]:='.';
         end;
 
@@ -93,12 +230,12 @@ for i:=sep + 1 to length(s) do
 
     if length(digit_plus) > length(digit_sum) then
       begin
-      for e:=length(digit_sum) to length(digit_plus) - 1 do digit_sum:=concat(digit_sum,'0');
+      for e:=length(digit_sum) to length(digit_plus) - 1 do digit_sum:=concat(digit_sum, '0');
       end;
 
     if length(digit_plus) < length(digit_sum) then
       begin
-      for e:=length(digit_plus) to length(digit_sum) - 1 do digit_plus:=concat(digit_plus,'0');
+      for e:=length(digit_plus) to length(digit_sum) - 1 do digit_plus:=concat(digit_plus, '0');
       end;
 
     remem:=false;
@@ -112,18 +249,18 @@ for i:=sep + 1 to length(s) do
             begin
             if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
               begin
-              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1) mod 10),result);
+              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1) mod 10), result);
               remem:=true
               end
 
             else begin
-              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1),result);
+              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1), result);
               remem:=false;
               end;
             end
 
           else begin
-            result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])),result);
+            result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])), result);
             end;
           end
 
@@ -132,25 +269,25 @@ for i:=sep + 1 to length(s) do
             begin
             if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
               begin
-              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1) mod 10),result);
+              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1) mod 10), result);
               remem:=true
               end
 
             else begin
-              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1),result);
+              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1), result);
               remem:=false;
               end;
             end
 
           else begin
-            result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])) mod 10),result);
+            result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])) mod 10), result);
             end;
 
           remem:=true;
           end;
         end;
 
-      if (digit_sum[e] = '.') and (digit_plus[e] = '.') then result:=concat('.',result);
+      if (digit_sum[e] = '.') and (digit_plus[e] = '.') then result:=concat('.', result);
       end;
     end;
   end;
@@ -158,194 +295,132 @@ for i:=sep + 1 to length(s) do
 esc:=false;
 i:=length(result);
 repeat
-  if result[i] = '0' then delete(result,i,1);
+  if result[i] = '0' then delete(result, i, 1);
   if result[i - 1] <> '0' then esc:=true else esc:=false;
   dec(i);
 until esc = true;
 
-for i:=2 to length(result) do write(result[i]);
+delete(result, 1, 2);
+write(result);
 end;
 
-procedure Integer_part;
+Procedure Integer_part;
 begin
-w:=sep - 1;
-num:='0';
-for i:=0 to sep - 2 do
+num_res:=''; num_mul:='0';
+
+for i:=1 to sep - 1 do
   begin
-  dec(w);
-  if s[i + 1] <> '0' then
+  remem:=false;
+
+  for f:=length(num_mul) downto 1 do
     begin
-    cnt:=w; power:='1'; sum_power:='';
-    for t:=1 to cnt do
+    if StrToInt(num_mul[f]) * 2 < 10 then
       begin
-      if length(sum_power) > 0 then
+      if remem = true then
         begin
-        power:=sum_power; sum_power:='';
-        end;
+        num_res:=concat(IntToStr(StrToInt(num_mul[f]) * 2 + 1), num_res);
 
-      remem:=false;
-      for f:=length(power) downto 1 do
+        if StrToInt(num_mul[f]) * 2 + 1 > 10 then remem:=true else remem:=false;
+        end
+
+      else num_res:=concat(IntToStr(StrToInt(num_mul[f]) * 2), num_res);
+      end
+
+    else begin
+      if remem = true then
         begin
-        inc(cnt);
-        if StrToInt(power[f]) * 2 < 10 then
-          begin
-          if remem = true then
-            begin
-            sum_power:=concat(IntToStr(StrToInt(power[f]) * 2 + 1),sum_power);
-            if StrToInt(power[f]) * 2 + 1 > 10 then remem:=true else remem:=false;
-            end
-
-          else sum_power:=concat(IntToStr(StrToInt(power[f]) * 2),sum_power);
-          end
-
-        else begin
-          if remem = true then
-            begin
-            sum_power:=concat(IntToStr((StrToInt(power[f]) * 2 + 1) mod 10),sum_power);
-            end
-
-          else begin
-            sum_power:=concat(IntToStr((StrToInt(power[f]) * 2) mod 10),sum_power);
-            remem:=true;
-            end;
-          end;
-
-        if (f = 1) and (remem = true) then sum_power:=concat('1',sum_power);
-        end;
-      end;
-
-    if w = 0 then sum_power:='1';
-
-    ano_sum_power:=num; num:='';
-    if length(ano_sum_power) < length(sum_power) then
-      begin
-      for t:=length(ano_sum_power) to length(sum_power) - 1 do ano_sum_power:=concat('0',ano_sum_power);
-      end;
-
-    if length(ano_sum_power) > length(sum_power) then
-      begin
-      for t:=length(sum_power) to length(ano_sum_power) - 1 do sum_power:=concat('0',sum_power);
-      end;
-
-    remem:=false;
-    for t:=length(sum_power) downto 1 do
-      begin
-      if StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) < 10 then
-        begin
-        if remem = true then
-          begin
-          if StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1 < 10 then
-            begin
-            num:=concat(IntToStr(StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1),num);
-            remem:=false;
-            end
-
-          else begin
-            num:=concat(IntToStr((StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1) mod 10),num);
-            if t = 1 then num:=concat('1',num);
-            end;
-          end
-
-        else begin
-          num:=concat(IntToStr(StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t])),num);
-          end;
+        num_res:=concat(IntToStr((StrToInt(num_mul[f]) * 2 + 1) mod 10), num_res);
         end
 
       else begin
-        if remem = true then
-          begin
-          num:=concat(IntToStr((StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t]) + 1) mod 10),num);
-          if t = 1 then num:=concat('1',num);
-          end
-
-        else begin
-          num:=concat(IntToStr((StrToInt(sum_power[t]) + StrToInt(ano_sum_power[t])) mod 10),num); remem:=true;
-          if t = 1 then num:=concat('1',num);
-          end;
+        num_res:=concat(IntToStr((StrToInt(num_mul[f]) * 2) mod 10), num_res);
+        remem:=true;
         end;
       end;
+
+    if (f = 1) and (remem = true) then num_res:=concat('1', num_res);
     end;
+
+  if (s[i] = '1') then
+    begin
+    num_res:=concat(num_res, IntToStr(StrToInt(num_res[length(num_res)]) + 1));
+    delete(num_res, length(num_res) - 1, 1);
+    end;
+
+  num_mul:=num_res;
+
+  if (i <> sep - 1) then num_res:='';
   end;
 
-write(num);
+if (negative = true) then num_res:=concat('-', num_res);
 
-if decimal = true then Decimal_part;
+write(num_res);
+
+if (decimal = true) then Decimal_part;
 end;
 
 Procedure Input;
 begin
-clrscr;
+Clear(0, 0, ScreenXY.x * ScreenXY.y, 0, 0);
 write('Enter binary to convert: ');
 
-GotoXY(1,3);
-
-TextColor(yellow);
-write('Tip: ');
-
-TextColor(White);
-write('Ctrl + C = Copy | Right click = Paste');
-
-GotoXY(26,1);
-
-//Note: 13 = Enter | 8 = Backspace
-
 repeat
-  if length(s) = 255 then
-    begin
-    clrscr;
-    GotoXY(1,1);
-    write('Enter binary to convert: ',s);
-    end;
-
   key:=readkey;
-
-  if (key in ['0'..'1']) or (key = '-') and (length(s) = 0) or (key = '.') and (length(s) > 0) and (decimal = false) then
+                             //===== Prevent Ctrl + V from being treated as normal input =====//
+  if (key in ['0'..'1']) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (key = '-') and (length(s) = 0) or (key = '.') and (length(s) > 0) and (decimal = false) then
     begin
     if key = '-' then negative:=true;
 
     if key = '.' then decimal:=true;
 
-    s:=concat(s,key);
+    s:=concat(s, key);
 
     write(key);
     end;
 
-  if length(s) = 1 then
+  if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then
     begin
-    clrscr;
-    write('Enter binary to convert: ',s);
+    i:=length(s);
+    s:=concat(s, PasteFromClip);
+
+    write(Copy(s, i + 1, length(s)));
+
+    if pos('.', s) <> 0 then decimal:=true;
+
+    if pos('-', s) <> 0 then negative:=true;
     end;
 
-  if (ord(key) = 8) and (length(s) <> 0) then
+
+  if (key = #8) and (length(s) <> 0) then
     begin
     if s[length(s)] = '.' then decimal:=false;
 
     if s[length(s)] = '-' then negative:=false;
 
-    if WhereX = 1 then
+    if WhereXY.x = 0 then
       begin
-      GotoXY((length(s) + 25) div (WhereY - 1),WhereY - 1);
+      GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
       write(' ');
-      GotoXY((length(s) + 25) div (WhereY - 1),WhereY - 1);
+      GotoXY(ScreenXY.x - 1, WhereXY.y);
       end
 
     else begin
-      GotoXY(WhereX - 1,WhereY);
+      GotoXY(WhereXY.x - 1, WhereXY.y);
       write(' ');
-      GotoXY(WhereX - 1,WhereY);
+      GotoXY(WhereXY.x - 1, WhereXY.y);
       end;
 
-    delete(s,length(s),1);
+    delete(s, length(s), 1);
     end;
 
-  if ord(key) = 13 then
+  if (key = #13) and (length(s) <> 0) then
     begin
-    if negative  = true then delete(s,1,1);
+    if negative  = true then delete(s, 1, 1);
 
     if s[length(s)] = '.' then
       begin
       decimal:=false;
-      delete(s,length(s),1);
+      delete(s, length(s), 1);
       end;
 
     if (length(s) > 1) and (decimal = true) and (s[length(s)] = '0') then
@@ -354,7 +429,7 @@ repeat
       repeat
         dec(i);
         if s[i] = '.' then decimal:=false;
-        delete(s,i,1);
+        delete(s, i, 1);
       until s[i - 1] = '1';
       end;
 
@@ -362,7 +437,7 @@ repeat
       begin
       i:=1;
       repeat
-        delete(s,i,1);
+        delete(s, i, 1);
       until (s[i] = '0') and (s[i + 1] = '.') or (s[i] = '1');
       end;
 
@@ -375,35 +450,53 @@ repeat
         end;
       end;
 
-    writeln(sLineBreak,slineBreak,'Convert to decimal: ');
+    writeln(#13#10#13#10'Convert to decimal: ');
     end;
-until ord(key) = 13;
+until (key = #13) and (length(s) <> 0);
 
 Integer_part;
 end;
 
 begin
-repeat
-  Input;
+if New_Terminal = false then
+  begin
+  repeat
+    ctrl_c:=false;
+    SetconsoleCtrlHandler(@handlerRoutine, TRUE);
 
-  write(sLineBreak,sLineBreak,'Press any key to ');
+    Input;
 
-  TextColor(green);
-  write('back');
+    ctrl_c:=true;
 
-  TextColor(White);
-  write(' | Esc to ');
+    write(TextColor(LightYellow), #13#10#13#10'Tip: ');
 
-  TextColor(Red);
-  write('exit');
+    writeln(TextColor(White), 'You can copy the result by pressing Ctrl + C');
 
-  TextColor(White);
+    write(#13#10'Press any key to ');
 
-  decimal:=false; negative:=false;
-  s:='';
-until ord(readkey) = 27;
+    write(TextColor(Green), 'back ');
 
-exit;
+    write(TextColor(White), '| Esc to ');
 
-readln;
+    write(TextColor(Red), 'exit');
+
+    repeat
+      key:=readkey;
+      if key = #3 then CopyToClip;
+    until key <> #3;
+
+    TextColor($7);
+
+    s:=''; result:='';
+    decimal:=false; negative:=false;
+  until key = #27;
+  end
+
+else begin
+  Write(TextColor(Red), 'Attention: ');
+
+  write(TextColor(White), 'Seem like you''re running this program with the new Microsoft Terminal. Since there are many errors that can be caused in this new Terminal, I recommend you to use the default terminal by running this program as administrator');
+
+  repeat until readkey <> '';
+  end;
 end.
