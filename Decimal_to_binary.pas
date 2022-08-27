@@ -80,7 +80,7 @@ OpenClipboard(0);
   GlobalUnlock(hClipData);
 CloseClipboard;
 
-if (Regex(strpas(StrData),'^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (pos('.',strpas(strData)) <> 0) and (decimal = true) or (pos('-',strpas(strData)) <> 0) and (negative = true) then
+if (Regex(strpas(StrData), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (pos('.', strpas(strData)) <> 0) and (decimal = true) or (pos('-', strpas(strData)) <> 0) and ((negative = true) or (length(s) <> 0)) then
   begin
   pre_pos:=WhereXY;
 
@@ -196,13 +196,13 @@ repeat
         begin
         if (remem = true) then
           begin
-          result:=concat(result,'1');
+          result:=concat(result, '1');
           dec_res[1]:='1';
           write(1);
           end
 
         else begin
-          result:=concat(result,'0');
+          result:=concat(result, '0');
           dec_res[1]:='0';
           write(0);
           end;
@@ -222,7 +222,7 @@ repeat
 
         write(#13#10'Press any key to ');
 
-        write(TextColor(Green),'continue ');
+        write(TextColor(Green), 'continue ');
 
         write(TextColor(White), '| Esc to ');
 
@@ -369,7 +369,7 @@ repeat
 
     if (input[length(input)] = '-') then negative:=false;
 
-    if WhereXY.x = 0 then
+    if (WhereXY.x = 0) then
       begin
       GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
       write(' ');
@@ -395,7 +395,7 @@ repeat
       delete(input, length(input), 1);
       end;
 
-    if (input[1] = '.') then input:=concat('0',input);
+    if (input[1] = '.') then input:=concat('0', input);
 
     if (length(input) > 1) and (decimal = true) and (input[length(input)] = '0') and (check_dec = true) then
       begin
@@ -488,7 +488,7 @@ if (New_Terminal = false) then
 
     ctrl_c:=true;
 
-    Write(TextColor(LightYellow), #13#10#13#10'Tip: ');
+    write(TextColor(LightYellow), #13#10#13#10'Tip: ');
 
     writeln(TextColor(White), 'You can copy the result by pressing Ctrl + C');
 
@@ -513,7 +513,7 @@ if (New_Terminal = false) then
   end
 
 else begin
-  Write(TextColor(Red), 'Attention: ');
+  write(TextColor(Red), 'Attention: ');
 
   write(TextColor(White), 'Seem like you''re running this program with the new Microsoft Terminal. Since there are many errors that can be caused in this new Terminal, I recommend you to use the default terminal by running this program as administrator');
 
