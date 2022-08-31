@@ -5,8 +5,8 @@ const Green       = $2;
       Red         = $4;
       White       = $7;
 
-var s, num_bin, num_div, num_res, dec_mul, dec_res, compare, result, limit: ansistring;
-    decimal, remem, negative, loop, show_loop, ctrl_c: boolean;
+var s, num_bin, num_div, num_res, dec_mul, dec_val, dec_res, compare, limit: ansistring;
+    ctrl_c, decimal, negative, remem, loop, show_loop: boolean;
     i, sep, cnt: longint;
     pre_pos: coord;
     key: char;
@@ -98,17 +98,15 @@ if (Regex(strpas(StrData), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (pos('.'
 else PasteFromClip:=Strpas(strdata);
 end;
 
-Procedure CopyToClip;
+Procedure CopyToClip(text: ansistring);
 var pchData, StrData: pchar;
     hClipData: HGlobal;
 begin
-if (decimal = true) then result:=concat(num_res, '.', result) else result:=num_res;
-
 Openclipboard(0);
   EmptyClipboard;
 
-  strData:=Stralloc(length(result) + 1);
-  StrPCopy(strData, result);
+  strData:=Stralloc(length(text) + 1);
+  StrPCopy(strData, text);
 
   hClipData:=GlobalAlloc(GMEM_MOVEABLE, length(strData) + 1);
   pchData:=GlobalLock(hClipData);
@@ -127,14 +125,14 @@ end;
 
 Function HandlerRoutine(dwCtrlType: DWORD): WINBOOL; stdcall;
 begin
-if (dwCtrlType = CTRL_C_EVENT) and (ctrl_c = true) then CopyToClip;
+if (dwCtrlType = CTRL_C_EVENT) and (ctrl_c = true) then CopyToClip(num_res + dec_res);
 end;
 
 Function New_Terminal: boolean;
 var command_res: ansistring;
 begin
 runcommand('cmd', ['/c', 'tasklist /v /fi "ImageName eq WindowsTerminal.exe"'], command_res);
-if pos(ParamStr(0), command_res) <> 0 then New_Terminal:=true else New_Terminal:=false;
+if (pos(ParamStr(0), command_res) <> 0) then New_Terminal:=true else New_Terminal:=false;
 end;
 
 Procedure Decimal_part;
@@ -143,12 +141,12 @@ write('.');
 
 cnt:=0;
 loop:=false;
-dec_res:='0' + Copy(s, sep, length(s));
+dec_val:='0' + Copy(s, sep, length(s)); dec_res:='.';
 
 repeat
   inc(cnt);
   remem:=false;
-  dec_mul:=dec_res; dec_res:='';
+  dec_mul:=dec_val; dec_val:='';
 
   for i:=length(dec_mul) downto 1 do
     begin
@@ -158,37 +156,37 @@ repeat
         begin
         if (remem = true) then
           begin
-          dec_res:=concat(IntToStr(StrToInt(dec_mul[i]) * 2 + 1), dec_res);
+          dec_val:=concat(IntToStr(StrToInt(dec_mul[i]) * 2 + 1), dec_val);
           remem:=false;
           end
 
         else begin
-          dec_res:=concat(IntToStr(StrToInt(dec_mul[i]) * 2), dec_res);
+          dec_val:=concat(IntToStr(StrToInt(dec_mul[i]) * 2), dec_val);
           end;
         end
 
       else begin
         if (remem = true) then
           begin
-          dec_res:=concat(IntToStr((StrToInt(dec_mul[i]) * 2 + 1) mod 10), dec_res);
+          dec_val:=concat(IntToStr((StrToInt(dec_mul[i]) * 2 + 1) mod 10), dec_val);
           end
 
         else begin
-          dec_res:=concat(IntToStr((StrToInt(dec_mul[i]) * 2) mod 10), dec_res);
+          dec_val:=concat(IntToStr((StrToInt(dec_mul[i]) * 2) mod 10), dec_val);
           remem:=true;
           end;
         end;
       end;
 
-    if (dec_mul[i] = '.') then dec_res:=concat('0.', dec_res);
+    if (dec_mul[i] = '.') then dec_val:=concat('0.', dec_val);
 
     if (i = 1) then
       begin
-      if (compare = dec_res) and (cnt <> length(s) - sep + 1) then loop:=true;
+      if (compare = dec_val) and (cnt <> length(s) - sep + 1) then loop:=true;
 
       if (cnt = length(s) - sep + 1) and (show_loop = true) then
         begin
-        compare:=dec_res;
+        compare:=dec_val;
         TextColor(Green);
         end;
 
@@ -196,19 +194,19 @@ repeat
         begin
         if (remem = true) then
           begin
-          result:=concat(result, '1');
-          dec_res[1]:='1';
+          dec_res:=concat(dec_res, '1');
+          dec_val[1]:='1';
           write(1);
           end
 
         else begin
-          result:=concat(result, '0');
-          dec_res[1]:='0';
+          dec_res:=concat(dec_res, '0');
+          dec_val[1]:='0';
           write(0);
           end;
         end;
 
-      if (show_loop = false) and (IntToStr(length(result)) = limit) then write('...');
+      if (show_loop = false) and (IntToStr(length(dec_res)) = limit) then write('...');
 
       if (GetAsyncKeyState(27) < 0) then
         begin
@@ -248,7 +246,7 @@ repeat
         end;
       end;
     end;
-until ('1.0' + dupestring('0', length(dec_res) - 3) = dec_res) or (loop = true) or (IntToStr(length(result)) = limit) and (show_loop = false);
+until ('1.0' + dupestring('0', length(dec_val) - 3) = dec_val) or (loop = true) or (IntToStr(length(dec_res)) = limit) and (show_loop = false);
 
 if (loop = true) then
   begin
@@ -502,12 +500,11 @@ if (New_Terminal = false) then
 
     repeat
       key:=readkey;
-      if (key = #3) then CopyToClip;
+      if (key = #3) then CopyToClip(num_res + dec_res);
     until (key <> #3);
 
     TextColor(White);
 
-    result:='';
     decimal:=false; negative:=false;
   until (key = #27);
   end
