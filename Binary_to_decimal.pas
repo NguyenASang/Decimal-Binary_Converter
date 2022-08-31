@@ -5,9 +5,9 @@ const Green       = $2;
       Red         = $4;
       White       = $7;
 
-var s, result, res, digit_sum, digit_plus, dividend, divisor, num_res, num_mul: ansistring;
-    decimal, esc, remem, negative, ctrl_c: boolean;
-    e, f, i, u, t, w, cnt, sep: longint;
+var s, num_mul, num_res, dividend, div_res, dec_plus, dec_sum, dec_res: ansistring;
+    ctrl_c, decimal, negative, remem: boolean;
+    i, u, sep: longint;
     pre_pos: coord;
     key: char;
 
@@ -65,7 +65,7 @@ begin
 expr:=TRegExpr.Create;
 expr.Expression:=reg;
 
-if expr.Exec(str_match) then Regex:=true
+if (expr.Exec(str_match)) then Regex:=true
 else Regex:=false;
 
 expr.Free;
@@ -89,7 +89,7 @@ if (Regex(strpas(StrData), '^[-]?(([01]+(\.[01]*)?)|(\.[01]+))$') = false) or (p
 
   write(TextColor(White), 'Your clipboard contains invalid characters');
 
-  repeat until readkey = #13; // <- Alternative to readln
+  repeat until (readkey = #13); // <- Alternative to readln
 
   Clear(pre_pos.x, pre_pos.y, ScreenXY.x * 3, pre_pos.x, pre_pos.y);
 
@@ -99,17 +99,15 @@ if (Regex(strpas(StrData), '^[-]?(([01]+(\.[01]*)?)|(\.[01]+))$') = false) or (p
 else PasteFromClip:=Strpas(strdata);
 end;
 
-Procedure CopyToClip;
+Procedure CopyToClip(text: ansistring);
 var pchData, StrData: pchar;
     hClipData: HGlobal;
 begin
-if decimal = true then result:=concat(num_res, '.', result) else result:=num_res;
-
 Openclipboard(0);
   EmptyClipboard;
 
-  strData:=Stralloc(length(result) + 1);
-  StrPCopy(strData, result);
+  strData:=Stralloc(length(text) + 1);
+  StrPCopy(strData, text);
 
   hClipData:=GlobalAlloc(GMEM_MOVEABLE, length(strData) + 1);
   pchData:=GlobalLock(hClipData);
@@ -128,180 +126,160 @@ end;
 
 Function HandlerRoutine(dwCtrlType: DWORD): WINBOOL; stdcall;
 begin
-if (dwCtrlType = CTRL_C_EVENT) and (ctrl_c = true) then CopyToClip;
+if (dwCtrlType = CTRL_C_EVENT) and (ctrl_c = true) then CopyToClip(num_res + dec_res);
 end;
 
 Function New_Terminal: boolean;
 var command_res: ansistring;
 begin
 runcommand('cmd', ['/c', 'tasklist /v /fi "ImageName eq WindowsTerminal.exe"'], command_res);
-if pos(ParamStr(0), command_res) <> 0 then New_Terminal:=true else New_Terminal:=false;
+if (pos(ParamStr(0), command_res) <> 0) then New_Terminal:=true else New_Terminal:=false;
 end;
 
 Procedure Decimal_part;
 begin
-write('.');
-
-res:=''; result:=''; digit_sum:='0.0';
-u:=0;
+div_res:=''; dec_res:=''; dec_sum:='0.0';
 
 for i:=sep + 1 to length(s) do
   begin
-  if length(res) = 0 then dividend:='1'
+  if (length(div_res) = 0) then dividend:='1'
 
   else begin
-    dividend:=res; res:='';
+    dividend:=div_res; div_res:='';
     end;
 
-  w:=0;
-  remem:=false; esc:=false;
-  while esc = false do
+  remem:=false;
+  for u:=1 to length(dividend) + 1 do
     begin
-    inc(w);
-    if dividend[w] <> '.' then
+    if (dividend[u] <> '.') then
       begin
-      if StrToInt(dividend[w]) mod 2 <> 0 then
+      if (StrToInt(dividend[u]) mod 2 <> 0) then
         begin
-        if remem = false then
+        if (remem = false) then
           begin
-          res:=concat(res, IntToStr(StrToInt(dividend[w]) div 2)); remem:=true;
-          if w = length(dividend) then dividend:=concat(dividend, '1');
+          remem:=true;
+          if (u = length(dividend)) then dividend:=concat(dividend, '1');
+          div_res:=concat(div_res, IntToStr(StrToInt(dividend[u]) div 2));
           end
 
         else begin
-          if w <> length(dividend) then
+          if (u <> length(dividend)) then
             begin
-            res:=concat(res, IntToStr((10 + StrToInt(dividend[w])) div 2));
-            if (10 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            div_res:=concat(div_res, IntToStr((10 + StrToInt(dividend[u])) div 2));
+            if ((10 + StrToInt(dividend[u])) mod 2 = 0) then remem:=false else remem:=true;
             end
 
           else begin
-            res:=concat(res, IntToStr((9 + StrToInt(dividend[w])) div 2));
-            if (9 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            div_res:=concat(div_res, IntToStr((9 + StrToInt(dividend[u])) div 2));
+            if ((9 + StrToInt(dividend[u])) mod 2 = 0) then remem:=false else remem:=true;
             end;
           end;
         end
 
       else begin
-        if remem = false then res:=concat(res, IntToStr(StrToInt(dividend[w]) div 2))
+        if (remem = false) then div_res:=concat(div_res, IntToStr(StrToInt(dividend[u]) div 2))
 
         else begin
-          if w <> length(dividend) then
+          if (u <> length(dividend)) then
             begin
-            res:=concat(res, IntToStr((10 + StrToInt(dividend[w])) div 2));
-            if (10 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            div_res:=concat(div_res, IntToStr((10 + StrToInt(dividend[u])) div 2));
+            if ((10 + StrToInt(dividend[u])) mod 2 = 0) then remem:=false else remem:=true;
             end
 
           else begin
-            res:=concat(res, IntToStr((9 + StrToInt(dividend[w])) div 2));
-            if (9 + StrToInt(dividend[w])) mod 2 = 0 then remem:=false else remem:=true;
+            div_res:=concat(div_res, IntToStr((9 + StrToInt(dividend[u])) div 2));
+            if ((9 + StrToInt(dividend[u])) mod 2 = 0) then remem:=false else remem:=true;
             end;
           end;
         end;
       end;
 
-    if dividend[w] = '.' then res:=concat(res, '.');
+    if (dividend[u] = '.') then div_res:=concat(div_res, '.');
 
-    if w + 1 > length(dividend) then
+    if (u = length(dividend)) then
       begin
-      cnt:=0;
-      for w:=1 to length(res) do
+      if (pos('.', div_res) = 0) then
         begin
-        if res[w] = '.' then inc(cnt);
+        insert('.', div_res, pos('0', div_res) + 1);
         end;
-
-      if cnt = 0 then
-        begin
-        for w:=length(res) downto 2 do res:=concat(res, res[w]);
-        res[2]:='.';
-        end;
-
-      esc:=true;
       end;
     end;
 
-  if s[i] <> '0' then
+  if (s[i] <> '0') then
     begin
-    digit_plus:=res;
-    if length(result) > 0 then
+    dec_plus:=div_res;
+
+    if (length(dec_res) > 0) then
       begin
-      digit_sum:=result; result:='';
+      dec_sum:=dec_res; dec_res:='';
       end;
 
-    if length(digit_plus) > length(digit_sum) then
+    if (length(dec_plus) > length(dec_sum)) then
       begin
-      for e:=length(digit_sum) to length(digit_plus) - 1 do digit_sum:=concat(digit_sum, '0');
-      end;
+      dec_sum:=concat(dec_sum, dupestring('0', length(dec_plus) - length(dec_sum)));
+      end
 
-    if length(digit_plus) < length(digit_sum) then
-      begin
-      for e:=length(digit_plus) to length(digit_sum) - 1 do digit_plus:=concat(digit_plus, '0');
+    else begin
+      dec_plus:=concat(dec_plus, dupestring('0', length(dec_sum) - length(dec_plus)));
       end;
 
     remem:=false;
-    for e:=length(digit_sum) downto 1 do
+    for u:=length(dec_sum) downto 1 do
       begin
-      if (digit_sum[e] <> '.') and (digit_plus[e] <> '.') then
+      if (dec_sum[u] <> '.') and (dec_plus[u] <> '.') then
         begin
-        if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) < 10 then
+        if (StrToInt(dec_sum[u]) + StrToInt(dec_plus[u]) < 10) then
           begin
-          if remem = true then
+          if (remem = true) then
             begin
-            if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
+            if (StrToInt(dec_sum[u]) + StrToInt(dec_plus[u]) + 1 > 9) then
               begin
-              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1) mod 10), result);
+              dec_res:=concat(IntToStr((StrToInt(dec_sum[u]) + StrToInt(dec_plus[u]) + 1) mod 10), dec_res);
               remem:=true
               end
 
             else begin
-              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1), result);
+              dec_res:=concat(IntToStr(StrToInt(dec_sum[u]) + StrToInt(dec_plus[u]) + 1), dec_res);
               remem:=false;
               end;
             end
 
           else begin
-            result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])), result);
+            dec_res:=concat(IntToStr(StrToInt(dec_sum[u]) + StrToInt(dec_plus[u])), dec_res);
             end;
           end
 
         else begin
-          if remem = true then
+          if (remem = true) then
             begin
-            if StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1 > 9 then
+            if (StrToInt(dec_sum[u]) + StrToInt(dec_plus[u]) + 1 > 9) then
               begin
-              result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1) mod 10), result);
+              dec_res:=concat(IntToStr((StrToInt(dec_sum[u]) + StrToInt(dec_plus[u]) + 1) mod 10), dec_res);
               remem:=true
               end
 
             else begin
-              result:=concat(IntToStr(StrToInt(digit_sum[e]) + StrToInt(digit_plus[e]) + 1), result);
+              dec_res:=concat(IntToStr(StrToInt(dec_sum[u]) + StrToInt(dec_plus[u]) + 1), dec_res);
               remem:=false;
               end;
             end
 
           else begin
-            result:=concat(IntToStr((StrToInt(digit_sum[e]) + StrToInt(digit_plus[e])) mod 10), result);
+            dec_res:=concat(IntToStr((StrToInt(dec_sum[u]) + StrToInt(dec_plus[u])) mod 10), dec_res);
             end;
 
           remem:=true;
           end;
-        end;
+        end
 
-      if (digit_sum[e] = '.') and (digit_plus[e] = '.') then result:=concat('.', result);
+      else dec_res:=concat('.', dec_res);
       end;
     end;
   end;
 
-esc:=false;
-i:=length(result);
-repeat
-  if result[i] = '0' then delete(result, i, 1);
-  if result[i - 1] <> '0' then esc:=true else esc:=false;
-  dec(i);
-until esc = true;
+delete(dec_res, 1, 1);
 
-delete(result, 1, 2);
-write(result);
+write(dec_res);
 end;
 
 Procedure Integer_part;
@@ -312,33 +290,32 @@ for i:=1 to sep - 1 do
   begin
   remem:=false;
 
-  for f:=length(num_mul) downto 1 do
+  for u:=length(num_mul) downto 1 do
     begin
-    if StrToInt(num_mul[f]) * 2 < 10 then
+    if (StrToInt(num_mul[u]) * 2 < 10) then
       begin
-      if remem = true then
+      if (remem = true) then
         begin
-        num_res:=concat(IntToStr(StrToInt(num_mul[f]) * 2 + 1), num_res);
-
-        if StrToInt(num_mul[f]) * 2 + 1 > 10 then remem:=true else remem:=false;
+        num_res:=concat(IntToStr(StrToInt(num_mul[u]) * 2 + 1), num_res);
+        if (StrToInt(num_mul[u]) * 2 + 1 > 10) then remem:=true else remem:=false;
         end
 
-      else num_res:=concat(IntToStr(StrToInt(num_mul[f]) * 2), num_res);
+      else num_res:=concat(IntToStr(StrToInt(num_mul[u]) * 2), num_res);
       end
 
     else begin
-      if remem = true then
+      if (remem = true) then
         begin
-        num_res:=concat(IntToStr((StrToInt(num_mul[f]) * 2 + 1) mod 10), num_res);
+        num_res:=concat(IntToStr((StrToInt(num_mul[u]) * 2 + 1) mod 10), num_res);
         end
 
       else begin
-        num_res:=concat(IntToStr((StrToInt(num_mul[f]) * 2) mod 10), num_res);
+        num_res:=concat(IntToStr((StrToInt(num_mul[u]) * 2) mod 10), num_res);
         remem:=true;
         end;
       end;
 
-    if (f = 1) and (remem = true) then num_res:=concat('1', num_res);
+    if (u = 1) and (remem = true) then num_res:=concat('1', num_res);
     end;
 
   if (s[i] = '1') then
@@ -369,9 +346,9 @@ repeat
                              //===== Prevent Ctrl + V from being treated as normal input =====//
   if (key in ['0'..'1']) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (key = '-') and (length(s) = 0) or (key = '.') and (length(s) > 0) and (decimal = false) then
     begin
-    if key = '-' then negative:=true;
+    if (key = '-') then negative:=true;
 
-    if key = '.' then decimal:=true;
+    if (key = '.') then decimal:=true;
 
     s:=concat(s, key);
 
@@ -385,19 +362,19 @@ repeat
 
     write(Copy(s, i + 1, length(s)));
 
-    if pos('.', s) <> 0 then decimal:=true;
+    if (pos('.', s) <> 0) then decimal:=true;
 
-    if pos('-', s) <> 0 then negative:=true;
+    if (pos('-', s) <> 0) then negative:=true;
     end;
 
 
   if (key = #8) and (length(s) <> 0) then
     begin
-    if s[length(s)] = '.' then decimal:=false;
+    if (s[length(s)] = '.') then decimal:=false;
 
-    if s[length(s)] = '-' then negative:=false;
+    if (s[length(s)] = '-') then negative:=false;
 
-    if WhereXY.x = 0 then
+    if (WhereXY.x = 0) then
       begin
       GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
       write(' ');
@@ -415,9 +392,9 @@ repeat
 
   if (key = #13) and (length(s) <> 0) then
     begin
-    if negative  = true then delete(s, 1, 1);
+    if (negative = true) then delete(s, 1, 1);
 
-    if s[length(s)] = '.' then
+    if (s[length(s)] = '.') then
       begin
       decimal:=false;
       delete(s, length(s), 1);
@@ -428,9 +405,9 @@ repeat
       i:=length(s) + 1;
       repeat
         dec(i);
-        if s[i] = '.' then decimal:=false;
+        if (s[i] = '.') then decimal:=false;
         delete(s, i, 1);
-      until s[i - 1] = '1';
+      until (s[i - 1] = '1');
       end;
 
     if (length(s) > 1) and (s[1] = '0') and (s[2] <> '.') then
@@ -441,12 +418,12 @@ repeat
       until (s[i] = '0') and (s[i + 1] = '.') or (s[i] = '1');
       end;
 
-    if decimal = false then sep:=length(s) + 1
+    if (decimal = false) then sep:=length(s) + 1
 
     else begin
       for i:=1 to length(s) do
         begin
-        if s[i] = '.' then sep:=i;
+        if (s[i] = '.') then sep:=i;
         end;
       end;
 
@@ -458,7 +435,7 @@ Integer_part;
 end;
 
 begin
-if New_Terminal = false then
+if (New_Terminal = false) then
   begin
   repeat
     ctrl_c:=false;
@@ -482,14 +459,14 @@ if New_Terminal = false then
 
     repeat
       key:=readkey;
-      if key = #3 then CopyToClip;
-    until key <> #3;
+      if (key = #3) then CopyToClip(num_res + dec_res);
+    until (key <> #3);
 
     TextColor($7);
 
-    s:=''; result:='';
+    s:=''; dec_res:='';
     decimal:=false; negative:=false;
-  until key = #27;
+  until (key = #27);
   end
 
 else begin
@@ -497,6 +474,6 @@ else begin
 
   write(TextColor(White), 'Seem like you''re running this program with the new Microsoft Terminal. Since there are many errors that can be caused in this new Terminal, I recommend you to use the default terminal by running this program as administrator');
 
-  repeat until readkey <> '';
+  repeat until (readkey <> '');
   end;
 end.
