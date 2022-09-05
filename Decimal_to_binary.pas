@@ -7,7 +7,7 @@ const Green       = $2;
 
 var s, num_bin, num_div, num_res, dec_mul, dec_val, dec_res, compare, limit: ansistring;
     ctrl_c, decimal, negative, remem, loop, show_loop: boolean;
-    i, sep, cnt: longint;
+    i, sep: longint;
     pre_pos: coord;
     key: char;
 
@@ -139,12 +139,10 @@ Procedure Decimal_part;
 begin
 write('.');
 
-cnt:=0;
 loop:=false;
 dec_val:='0' + Copy(s, sep, length(s)); dec_res:='.';
 
 repeat
-  inc(cnt);
   remem:=false;
   dec_mul:=dec_val; dec_val:='';
 
@@ -182,9 +180,9 @@ repeat
 
     if (i = 1) then
       begin
-      if (compare = dec_val) and (cnt <> length(s) - sep + 1) then loop:=true;
+      if (compare = dec_val) and (length(dec_res) - 1 <> length(s) - sep + 1) then loop:=true;
 
-      if (cnt = length(s) - sep + 1) and (show_loop = true) then
+      if (length(dec_res) - 1 = length(s) - sep + 1) and (show_loop = true) then
         begin
         compare:=dec_val;
         TextColor(Green);
@@ -206,15 +204,15 @@ repeat
           end;
         end;
 
-      if (show_loop = false) and (IntToStr(length(dec_res)) = limit) then write('...');
+      if (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit) then write('...');
 
       if (GetAsyncKeyState(27) < 0) then
         begin
         pre_pos:=WhereXY;
 
-        Writeln(TextColor(White), '...');
+        writeln(TextColor(White), '...');
 
-        Write(TextColor(Red), #13#10'Warning: ');
+        write(TextColor(Red), #13#10'Warning: ');
 
         writeln(TextColor(White), 'The converter has been paused');
 
@@ -246,7 +244,7 @@ repeat
         end;
       end;
     end;
-until ('1.0' + dupestring('0', length(dec_val) - 3) = dec_val) or (loop = true) or (IntToStr(length(dec_res)) = limit) and (show_loop = false);
+until ('1.0' + dupestring('0', length(dec_val) - 3) = dec_val) or (loop = true) or (IntToStr(length(dec_res) - 1) = limit) and (show_loop = false);
 
 if (loop = true) then
   begin
@@ -334,7 +332,7 @@ input:='';
 repeat
   key:=readkey;
                              //===== Prevent Ctrl + V from being treated as normal input =====//
-  if (key in ['0'..'9']) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (key = '-') and (length(input) = 0) and (check_neg = true) or (key = '.') and (length(input) > 0) and (decimal = false) and (check_dec = true) then
+  if (key in ['0'..'9']) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (check_neg = true) and (key = '-') and (length(input) = 0) or (check_dec = true) and (key = '.') and (decimal = false) then
     begin
     if (key = '-') then negative:=true;
 
