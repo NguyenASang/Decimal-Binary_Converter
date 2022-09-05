@@ -4,11 +4,19 @@ A high precision Decimal/Binary converter written in Free Pascal
 ## Features
 - User - friendly interface
 - Support all types of numbers
-- Quick calculation
-- High precision (no rounding, E notation,...)
-- Highlight the loop section for special cases when converting to binary. Learn [more](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-)
+- Quick calculation and high precision 
+- Highlight the [loop section](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-) for special cases when converting to binary
 - Automatically remove unnecessary parts in output and input (EG: 0001.100 -> 1.1)
-- Bypass the character limit when you type input. Learn [more](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-input-limit-in-free-pascals-console-)
+- Bypass the [character limit](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-input-limit-in-free-pascals-console-) when you type input
+
+## Compatibility
+
+|       OS      |     Status     |
+| ------------- | -------------  |
+| Window 11     | Working        |
+| Window 10     | Working        |
+| Window 7      | Not tested yet |
+| Linux         | Planned        |
 
 ## Usage
 ### Normal user
