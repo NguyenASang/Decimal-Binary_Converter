@@ -463,7 +463,7 @@ if (New_Terminal = false) then
       if (key = #3) then CopyToClip(num_res + dec_res);
     until (key <> #3);
 
-    TextColor($7);
+    TextColor(White);
 
     s:=''; dec_res:='';
     decimal:=false; negative:=false;
