@@ -81,7 +81,7 @@ OpenClipboard(0);
   GlobalUnlock(hClipData);
 CloseClipboard;
 
-if (Regex(strpas(StrData), '^[-]?(([01]+(\.[01]*)?)|(\.[01]+))$') = false) or (pos('.', strpas(strData)) <> 0) and (decimal = true) or (pos('-', strpas(strData)) <> 0) and ((negative = true) or (length(s) <> 0)) then
+if (Regex(strpas(StrData), '^[-]?(([01]+(\.[01]*)?)|(\.[01]+))$') = false) or (pos('.', strpas(strData)) <> 0) and (decimal = true) or (pos('-', strpas(strData)) <> 0) and (length(s) <> 0) then
   begin
   pre_pos:=WhereXY;
 
@@ -344,7 +344,7 @@ write('Enter binary to convert: ');
 repeat
   key:=readkey;
                              //===== Prevent Ctrl + V from being treated as normal input =====//
-  if (key in ['0'..'1']) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (key = '-') and (length(s) = 0) or (key = '.') and (length(s) > 0) and (decimal = false) then
+  if (key in ['0'..'1']) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (key = '-') and (length(s) = 0) or (key = '.') and (decimal = false) then
     begin
     if (key = '-') then negative:=true;
 
@@ -366,7 +366,6 @@ repeat
 
     if (pos('-', s) <> 0) then negative:=true;
     end;
-
 
   if (key = #8) and (length(s) <> 0) then
     begin
@@ -399,6 +398,8 @@ repeat
       decimal:=false;
       delete(s, length(s), 1);
       end;
+
+    if (s[1] = '.') then s:=concat('0', s);
 
     if (length(s) > 1) and (decimal = true) and (s[length(s)] = '0') then
       begin
