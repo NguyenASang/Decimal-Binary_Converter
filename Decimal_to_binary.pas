@@ -5,7 +5,7 @@ const Green       = $2;
       Red         = $4;
       White       = $7;
 
-var s, num_bin, num_div, num_res, dec_mul, dec_val, dec_res, compare, limit: ansistring;
+var s, num_div, num_res, dec_mul, dec_res, compare, limit: ansistring;
     ctrl_c, decimal, negative, remem, loop, show_loop: boolean;
     i, sep: longint;
     pre_pos: coord;
@@ -80,7 +80,7 @@ OpenClipboard(0);
   GlobalUnlock(hClipData);
 CloseClipboard;
 
-if (Regex(strpas(StrData), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (pos('.', strpas(strData)) <> 0) and (decimal = true) or (pos('-', strpas(strData)) <> 0) and ((negative = true) or (length(s) <> 0)) then
+if (Regex(strpas(StrData), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (pos('.', strpas(strData)) > 0) and (decimal = true) or (pos('-', strpas(strData)) > 0) and ((negative = true) or (length(s) > 0)) then
   begin
   pre_pos:=WhereXY;
 
@@ -125,7 +125,7 @@ end;
 
 Function HandlerRoutine(dwCtrlType: DWORD): WINBOOL; stdcall;
 begin
-if (dwCtrlType = CTRL_C_EVENT) and (ctrl_c = true) then CopyToClip(num_res + dec_res);
+if (ctrl_c = true) and (dwCtrlType = CTRL_C_EVENT) then CopyToClip(num_res + dec_res);
 end;
 
 Function New_Terminal: boolean;
@@ -140,111 +140,97 @@ begin
 write('.');
 
 loop:=false;
-dec_val:='0' + Copy(s, sep, length(s)); dec_res:='.';
+dec_mul:='0' + Copy(s, sep, length(s)); dec_res:='.';
 
 repeat
   remem:=false;
-  dec_mul:=dec_val; dec_val:='';
 
-  for i:=length(dec_mul) downto 1 do
+  for i:=length(dec_mul) downto 3 do
     begin
-    if (dec_mul[i] <> '.') and (i <> 1) then
+    if (StrToInt(dec_mul[i]) * 2 > 9) then
       begin
-      if (StrToInt(dec_mul[i]) * 2 < 10) then
+      if (remem = true) then
         begin
-        if (remem = true) then
-          begin
-          dec_val:=concat(IntToStr(StrToInt(dec_mul[i]) * 2 + 1), dec_val);
-          remem:=false;
-          end
-
-        else begin
-          dec_val:=concat(IntToStr(StrToInt(dec_mul[i]) * 2), dec_val);
-          end;
+        dec_mul[i]:=IntToStr((StrToInt(dec_mul[i]) * 2 + 1) mod 10)[1];
         end
 
       else begin
-        if (remem = true) then
-          begin
-          dec_val:=concat(IntToStr((StrToInt(dec_mul[i]) * 2 + 1) mod 10), dec_val);
-          end
-
-        else begin
-          dec_val:=concat(IntToStr((StrToInt(dec_mul[i]) * 2) mod 10), dec_val);
-          remem:=true;
-          end;
+        remem:=true;
+        dec_mul[i]:=IntToStr((StrToInt(dec_mul[i]) * 2) mod 10)[1];
         end;
-      end;
+      end
 
-    if (dec_mul[i] = '.') then dec_val:=concat('0.', dec_val);
-
-    if (i = 1) then
-      begin
-      if (compare = dec_val) and (length(dec_res) - 1 <> length(s) - sep + 1) then loop:=true;
-
-      if (length(dec_res) - 1 = length(s) - sep + 1) and (show_loop = true) then
+    else begin
+      if (remem = true) then
         begin
-        compare:=dec_val;
-        TextColor(Green);
-        end;
+        remem:=false;
+        dec_mul[i]:=IntToStr(StrToInt(dec_mul[i]) * 2 + 1)[1];
+        end
 
-      if (loop = false) then
-        begin
-        if (remem = true) then
-          begin
-          dec_res:=concat(dec_res, '1');
-          dec_val[1]:='1';
-          write(1);
-          end
-
-        else begin
-          dec_res:=concat(dec_res, '0');
-          dec_val[1]:='0';
-          write(0);
-          end;
-        end;
-
-      if (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit) then write('...');
-
-      if (GetAsyncKeyState(27) < 0) then
-        begin
-        pre_pos:=WhereXY;
-
-        writeln(TextColor(White), '...');
-
-        write(TextColor(Red), #13#10'Warning: ');
-
-        writeln(TextColor(White), 'The converter has been paused');
-
-        write(#13#10'Press any key to ');
-
-        write(TextColor(Green), 'continue ');
-
-        write(TextColor(White), '| Esc to ');
-
-        write(TextColor(Red), 'stop ');
-
-        write(TextColor(White), 'the converter');
-
-        repeat
-          key:=readkey;
-
-          if (key = #27) then
-            begin
-            Clear(pre_pos.x + 3, pre_pos.y, ScreenXY.x * 5, pre_pos.x + 3, pre_pos.y);
-            exit;
-            end
-
-          else begin
-            Clear(pre_pos.x, pre_pos.y, ScreenXY.x * 5, pre_pos.x, pre_pos.y);
-            if (show_loop = true) then TextColor(Green);
-            break;
-            end
-        until (key <> '');
+      else begin
+        dec_mul[i]:=IntToStr(StrToInt(dec_mul[i]) * 2)[1];
         end;
       end;
     end;
-until ('1.0' + dupestring('0', length(dec_val) - 3) = dec_val) or (loop = true) or (IntToStr(length(dec_res) - 1) = limit) and (show_loop = false);
+
+  if (remem = true) then
+    begin
+    write('1');
+    dec_res:=dec_res + '1';
+    end
+
+  else begin
+    write('0');
+    dec_res:=dec_res + '0';
+    end;
+
+  if (show_loop = true) and (length(dec_res) - 1 = length(s) - sep + 1) then
+    begin
+    compare:=dec_mul;
+    TextColor(Green);
+    end
+
+  else if (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit) then write('...')
+
+  else if (length(dec_res) - 1 <> length(s) - sep + 1) and (compare = dec_mul) then loop:=true;
+
+  if (GetAsyncKeyState(27) < 0) then
+    begin
+    pre_pos:=WhereXY;
+
+    writeln(TextColor(White), '...');
+
+    write(TextColor(Red), #13#10'Warning: ');
+
+    writeln(TextColor(White), 'The converter has been paused');
+
+    write(#13#10'Press any key to ');
+
+    write(TextColor(Green), 'continue ');
+
+    write(TextColor(White), '| Esc to ');
+
+    write(TextColor(Red), 'stop ');
+
+    write(TextColor(White), 'the converter');
+
+    repeat
+      key:=readkey;
+
+      if (key = #27) then
+        begin
+        Clear(pre_pos.x + 3, pre_pos.y, ScreenXY.x * 5, pre_pos.x + 3, pre_pos.y);
+        exit;
+        end
+
+      else begin
+        Clear(pre_pos.x, pre_pos.y, ScreenXY.x * 5, pre_pos.x, pre_pos.y);
+        if (show_loop = true) then TextColor(Green);
+        break;
+        end
+    until (key <> '');
+    end;
+until ('0.0' + dupestring('0', length(dec_mul) - 3) = dec_mul) or (loop = true) or (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit);
 
 if (loop = true) then
   begin
@@ -260,65 +246,55 @@ end;
 
 Procedure Integer_part;
 begin
-num_res:=''; num_div:='';
-num_bin:=Copy(s, 1, sep - 1);
+num_div:=Copy(s, 1, sep - 1); num_res:='';
 
 repeat
-  if (num_div <> '') then num_bin:=num_div;
+  delete(num_div, pos(' ', num_div), 1);
 
-  num_div:='';
-
-  if (StrToInt(num_bin[length(num_bin)]) mod 2 <> 0) then
+  if (StrToInt(num_div[length(num_div)]) mod 2 = 1) then
     begin
-    num_bin:=concat(num_bin, IntToStr(StrToInt(num_bin[length(num_bin)]) - 1));
-    delete(num_bin, length(num_bin) - 1, 1);
-    num_res:=concat('1', num_res);
+    num_div[length(num_div)]:=IntToStr(StrToInt(num_div[length(num_div)]) - 1)[1];
+    num_res:='1' + num_res;
     end
 
   else begin
-    num_res:=concat('0', num_res);
+    num_res:='0' + num_res;
     end;
 
   remem:=false;
-  for i:=1 to length(num_bin) do
+
+  for i:=1 to length(num_div) do
     begin
-    if (StrToInt(num_bin[i]) mod 2 <> 0) then
+    if (StrToInt(num_div[i]) mod 2 = 1) then
       begin
       if (remem = true) then
         begin
-        num_div:=concat(num_div, IntToStr((10 + StrToInt(num_bin[i])) div 2));
+        num_div[i]:=IntToStr((10 + StrToInt(num_div[i])) div 2)[1];
         end
 
       else begin
-        if (num_bin[i] = '1') and (i <> 1) then
-          begin
-          num_div:=concat(num_div, IntToStr(StrToInt(num_bin[i]) div 2));
-          end;
-
-        if (num_bin[i] <> '1') then
-          begin
-          num_div:=concat(num_div, IntToStr(StrToInt(num_bin[i]) div 2));
-          end;
-
         remem:=true;
+        if (i > 1) or (i = 1) and (num_div[i] <> '1') then num_div[i]:=IntToStr(StrToInt(num_div[i]) div 2)[1]
+
+        else num_div[i]:=' ';
         end;
       end
 
     else begin
       if (remem = true) then
         begin
-        num_div:=concat(num_div, IntToStr((10 + StrToInt(num_bin[i])) div 2));
         remem:=false;
+        num_div[i]:=IntToStr((10 + StrToInt(num_div[i])) div 2)[1];
         end
 
       else begin
-        num_div:=concat(num_div, IntToStr(StrToInt(num_bin[i]) div 2));
+        num_div[i]:=IntToStr(StrToInt(num_div[i]) div 2)[1];
         end;
       end;
     end;
 until (num_div = '0');
 
-if (negative = true) then num_res:=concat('-', num_res);
+if (negative = true) then num_res:='-' + num_res;
 
 write(num_res);
 
@@ -332,17 +308,13 @@ input:='';
 repeat
   key:=readkey;
                              //===== Prevent Ctrl + V from being treated as normal input =====//
-  if (key in ['0'..'9']) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (check_neg = true) and (key = '-') and (length(input) = 0) or (check_dec = true) and (key = '.') and (decimal = false) then
+  if (key in ['0'..'9']) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (check_neg = true) and (length(input) = 0) and (key = '-') or (check_dec = true) and (decimal = false) and (key = '.') then
     begin
     if (key = '-') then negative:=true;
 
-    if (key = '.') then
-      begin
-      decimal:=true;
-      sep:=length(input) + 1;
-      end;
+    if (key = '.') then decimal:=true;
 
-    input:=concat(input, key);
+    input:=input + key;
 
     write(key);
     end;
@@ -350,120 +322,115 @@ repeat
   if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then
     begin
     i:=length(input);
-    input:=concat(input, PasteFromClip);
+    input:=input + PasteFromClip;
 
     write(Copy(input, i + 1, length(input)));
 
-    if (pos('.', input) <> 0) then decimal:=true;
+    if (pos('.', input) > 0) then decimal:=true;
 
-    if (pos('-', input) <> 0) then negative:=true;
+    if (pos('-', input) > 0) then negative:=true;
     end;
 
-  if (key = #8) and (length(input) > 0) then
+  if (length(input) > 0) then
     begin
-    if (input[length(input)] = '.') then decimal:=false;
-
-    if (input[length(input)] = '-') then negative:=false;
-
-    if (WhereXY.x = 0) then
+    if (key = #8) then
       begin
-      GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
-      write(' ');
-      GotoXY(ScreenXY.x - 1, WhereXY.y);
-      end
+      if (WhereXY.x = 0) then
+        begin
+        GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
+        write(' ');
+        GotoXY(ScreenXY.x - 1, WhereXY.y);
+        end
 
-    else begin
-      GotoXY(WhereXY.x - 1, WhereXY.y);
-      write(' ');
-      GotoXY(WhereXY.x - 1, WhereXY.y);
-      end;
+      else begin
+        GotoXY(WhereXY.x - 1, WhereXY.y);
+        write(' ');
+        GotoXY(WhereXY.x - 1, WhereXY.y);
+        end;
 
-    delete(input, length(input), 1);
-    end;
+      if (input[length(input)] = '.') then decimal:=false;
 
-  if (key = #13) and (length(input) > 0) then
-    begin
-    if (negative = true) and (check_neg = true) then delete(input, 1, 1);
+      if (input[length(input)] = '-') then negative:=false;
 
-    if (input[length(input)] = '.') then
-      begin
-      decimal:=false;
       delete(input, length(input), 1);
       end;
 
-    if (input[1] = '.') then input:=concat('0', input);
-
-    if (length(input) > 1) and (decimal = true) and (input[length(input)] = '0') and (check_dec = true) then
+    if (key = #13) then
       begin
-      i:=length(input) + 1;
-      repeat
-        dec(i);
-        if (input[i] = '.') then decimal:=false;
-        delete(input, i, 1);
-      until (input[i - 1] in ['1'..'9']);
-      end;
+      if (check_neg = true) and (negative = true) then delete(input, 1, 1);
 
-    if (length(input) > 1) and (input[1] = '0') and (input[2] <> '.') then
-      begin
-      i:=1;
-      repeat
-        delete(input, i, 1);
-      until (input[i] = '0') and (input[i + 1] = '.') or (input[i] in ['1'..'9']);
-      end;
-
-    if (decimal = false) then sep:=length(input) + 1
-
-    else begin
-      for i:=1 to length(input) do
+      if (check_dec = true) and (decimal = true) and ((input[length(input)] = '0') or (input[length(input)] = '.')) then
         begin
-        if (input[i] = '.') then sep:=i;
+        repeat
+          if (input[length(input)] = '.') then decimal:=false;
+
+          delete(input, length(input), 1);
+        until (input[length(input)] in ['1'..'9']) or (decimal = false);
+        end;
+
+      if (length(input) > 1) and ((input[1] = '0') or (input[1] = '.')) then
+        begin
+        repeat
+          if (input[1] = '.') then input:='0' + input
+
+          else delete(input, 1, 1);
+        until (input[1] in ['1'..'9']) or (input[2] = '.') or (input = '0');
+        end;
+
+      if (check_dec = true) and (check_neg = true) then
+        begin
+        if (decimal = true) then sep:=pos('.', input)
+
+        else sep:=length(input) + 1;
+        end;
+
+      if (decimal = true) and (check_dec = true) then
+        begin
+        write(#13#10#13#10'Do you want to show looping part of the decimal part ? ');
+
+        writeln('Y = Yes | N = No');
+
+        write(TextColor(Red), #13#10'Warning: ');
+
+        writeln(TextColor(White), 'Choosing "Yes" will provide more accurate results, but it can sometimes take some time to calculate.');
+
+        writeln('         Choosing "No" will give you an option to choose how many digits you want to display.');
+
+        write(TextColor(LightYellow), #13#10'Tip: ');
+
+        write(TextColor(White), 'You can pause the converter by pressing Esc while it''s converting');
+
+        repeat
+          key:=readkey;
+
+          case lowercase(key) of
+            'y' : begin
+                  clear(0, WhereXY.y - 5, ScreenXY.x * 6, 0, WhereXY.y - 7);
+
+                  show_loop:=true;
+                  exit;
+                  end;
+
+            'n' : begin
+                  clear(0, WhereXY.y - 5, ScreenXY.x * 6, 0, WhereXY.y - 5);
+
+                  pre_pos:=WhereXY;
+
+                  writeln('How many digits do you want to display ?');
+
+                  limit:=Input(false, false);
+
+                  clear(0, pre_pos.y, ScreenXY.x * (ScreenXY.y - pre_pos.y), 0, pre_pos.y - 2);
+
+                  show_loop:=false;
+                  exit;
+                  end;
+          end;
+        until (false); // <- Trick to repeat forever without condition
         end;
       end;
     end;
-until (key = #13) and (length(input) > 0);
-
-if (decimal = true) and (check_dec = true) then
-  begin
-  write(#13#10#13#10'Do you want to show looping part of the decimal part ? ');
-
-  writeln('Y = Yes | N = No');
-
-  write(TextColor(Red), #13#10'Warning: ');
-
-  writeln(TextColor(White), 'Choosing "Yes" will provide more accurate results, but it can sometimes take some time to calculate.');
-  writeln('         Choosing "No" will give you an option to choose how many digits you want to display.');
-
-  write(TextColor(LightYellow), #13#10'Tip: ');
-  write(TextColor(White), 'You can pause the converter by pressing Esc while it''s converting');
-
-  repeat
-    key:=readkey;
-
-    case lowercase(key) of
-      'y' : begin
-            clear(0, WhereXY.y - 5, ScreenXY.x * 6, 0, WhereXY.y - 7);
-
-            show_loop:=true;
-            exit;
-            end;
-
-      'n' : begin
-            clear(0, WhereXY.y - 5, ScreenXY.x * 6, 0, WhereXY.y - 5);
-
-            pre_pos:=WhereXY;
-
-            writeln('How many digits do you want to display ?');
-
-            limit:=Input(false, false);
-
-            clear(0, pre_pos.y, ScreenXY.x * (ScreenXY.y - pre_pos.y), 0, pre_pos.y - 2);
-
-            show_loop:=false;
-            exit;
-            end;
-    end;
-  until (false); // <- Trick to repeat forever without condition
-  end;
+until (length(input) > 0) and (key = #13);
 end;
 
 begin
@@ -478,7 +445,7 @@ if (New_Terminal = false) then
 
     s:=Input(true, true);
 
-    writeln(#13#10#13#10'Convert to decimal: ');
+    writeln(#13#10#13#10'Convert to binary: ');
 
     Integer_part;
 
