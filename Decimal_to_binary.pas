@@ -1,4 +1,4 @@
-uses keyboard, process, regexpr, strutils, sysutils, windows;
+uses keyboard, process, regexpr, sysutils, windows;
 
 const Green       = $2;
       LightYellow = $E;
@@ -145,6 +145,13 @@ dec_mul:='0' + Copy(s, sep, length(s)); dec_res:='.';
 repeat
   remem:=false;
 
+  if (dec_mul[length(dec_mul)] = '0') then
+    begin
+    repeat
+      delete(dec_mul, length(dec_mul), 1);
+    until (dec_mul[length(dec_mul)] in ['1'..'9']) or (dec_mul = '0');
+    end;
+
   for i:=length(dec_mul) downto 3 do
     begin
     if (StrToInt(dec_mul[i]) * 2 > 9) then
@@ -225,12 +232,13 @@ repeat
 
       else begin
         Clear(pre_pos.x, pre_pos.y, ScreenXY.x * 5, pre_pos.x, pre_pos.y);
+
         if (show_loop = true) then TextColor(Green);
         break;
         end
     until (key <> '');
     end;
-until ('0.0' + dupestring('0', length(dec_mul) - 3) = dec_mul) or (loop = true) or (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit);
+until (dec_mul = '0') or (loop = true) or (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit);
 
 if (loop = true) then
   begin
