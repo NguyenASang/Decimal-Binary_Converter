@@ -27,7 +27,6 @@ SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor_pos);
 end;
 
 Function TextColor(Color: Byte): ansistring;
-var ConsoleInfo: TConsoleScreenBufferInfo;
 begin
 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Color);
 TextColor:='';
@@ -138,7 +137,7 @@ end;
 
 Procedure Decimal_part;
 begin
-dec_sum:='0.0'; div_res:='1.0';
+dec_sum:='0.0'; div_res:='1.0'; dec_res:='';
 
 for i:=sep + 1 to length(s) do
   begin
@@ -353,7 +352,7 @@ repeat
     begin
     if (negative = true) then delete(s, 1, 1);
 
-    if (decimal = true) and ((s[length(s)] = '0') or (s[length(s)] = '.')) then
+    if (decimal = true) and (s[length(s)] in ['0', '.']) then
       begin
       repeat
         if (s[length(s)] = '.') then decimal:=false;
@@ -362,7 +361,7 @@ repeat
       until (s[length(s)] = '1') or (decimal = false);
       end;
 
-    if (length(s) > 1) and ((s[1] = '0') or (s[1] = '.')) then
+    if (length(s) > 1) and (s[1] in ['0', '.']) then
       begin
       repeat
         if (s[1] = '.') then s:='0' + s
@@ -412,7 +411,7 @@ if (New_Terminal = false) then
 
     TextColor(White);
 
-    s:=''; dec_res:='';
+    s:='';
     decimal:=false; negative:=false;
   until (key = #27);
   end
