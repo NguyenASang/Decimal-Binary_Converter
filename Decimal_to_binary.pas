@@ -6,7 +6,7 @@ const Green       = $2;
       White       = $7;
 
 var s, num_div, num_res, dec_mul, dec_res, compare, limit: ansistring;
-    ctrl_c, decimal, negative, remem, loop, show_loop: boolean;
+    ctrl_c, decimal, negative, remem, show_loop: boolean;
     i, sep: longint;
     pre_pos: coord;
     key: char;
@@ -26,8 +26,7 @@ cursor_pos.y:=y;
 SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor_pos);
 end;
 
-Function TextColor(Color: Byte): ansistring;
-var ConsoleInfo: TConsoleScreenBufferInfo;
+Function TextColor(Color: byte): ansistring;
 begin
 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Color);
 TextColor:='';
@@ -139,18 +138,10 @@ Procedure Decimal_part;
 begin
 write('.');
 
-loop:=false;
 dec_mul:='0' + Copy(s, sep, length(s)); dec_res:='.';
 
 repeat
   remem:=false;
-
-  if (dec_mul[length(dec_mul)] = '0') then
-    begin
-    repeat
-      delete(dec_mul, length(dec_mul), 1);
-    until (dec_mul[length(dec_mul)] in ['1'..'9']) or (dec_mul = '0');
-    end;
 
   for i:=length(dec_mul) downto 3 do
     begin
@@ -180,6 +171,13 @@ repeat
       end;
     end;
 
+  if (dec_mul[length(dec_mul)] = '0') then
+    begin
+    repeat
+      delete(dec_mul, length(dec_mul), 1);
+    until (dec_mul[length(dec_mul)] in ['1'..'9']) or (dec_mul = '0');
+    end;
+
   if (remem = true) then
     begin
     write('1');
@@ -191,15 +189,16 @@ repeat
     dec_res:=dec_res + '0';
     end;
 
-  if (show_loop = true) and (length(dec_res) - 1 = length(s) - sep + 1) then
+  if (show_loop = true) then
     begin
-    compare:=dec_mul;
-    TextColor(Green);
-    end
+    if (length(dec_res) - 1 = length(s) - sep) then
+      begin
+      TextColor(Green);
+      compare:=dec_mul;
+      end
 
-  else if (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit) then write('...')
-
-  else if (length(dec_res) - 1 <> length(s) - sep + 1) and (compare = dec_mul) then loop:=true;
+    else if (compare = dec_mul) then break;
+    end;
 
   if (GetAsyncKeyState(27) < 0) then
     begin
@@ -238,9 +237,9 @@ repeat
         end
     until (key <> '');
     end;
-until (dec_mul = '0') or (loop = true) or (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit);
+until (dec_mul = '0') or (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit);
 
-if (loop = true) then
+if (dec_mul <> '0') then
   begin
   writeln(TextColor(White), '...');
 
@@ -367,7 +366,7 @@ repeat
       begin
       if (check_neg = true) and (negative = true) then delete(input, 1, 1);
 
-      if (check_dec = true) and (decimal = true) and ((input[length(input)] = '0') or (input[length(input)] = '.')) then
+      if (check_dec = true) and (decimal = true) and (input[length(input)] in ['0', '.']) then
         begin
         repeat
           if (input[length(input)] = '.') then decimal:=false;
@@ -376,7 +375,7 @@ repeat
         until (input[length(input)] in ['1'..'9']) or (decimal = false);
         end;
 
-      if (length(input) > 1) and ((input[1] = '0') or (input[1] = '.')) then
+      if (length(input) > 1) and (input[1] in ['0', '.']) then
         begin
         repeat
           if (input[1] = '.') then input:='0' + input
