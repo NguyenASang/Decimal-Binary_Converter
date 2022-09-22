@@ -16,7 +16,6 @@ A high precision Decimal/Binary converter written in Free Pascal
 | Window 11     | Working        |
 | Window 10     | Working        |
 | Window 7      | Not tested yet |
-| Linux         | Planned        |
 
 ## Usage
 ### Normal user
