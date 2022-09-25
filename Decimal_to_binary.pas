@@ -346,7 +346,7 @@ repeat
         begin
         GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
         write(' ');
-        GotoXY(ScreenXY.x - 1, WhereXY.y);
+        GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
         end
 
       else begin
