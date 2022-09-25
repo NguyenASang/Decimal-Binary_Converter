@@ -221,11 +221,11 @@ for i:=sep + 1 to length(s) do
         else begin
           if (remem = true) then
             begin
-            dec_res:=IntToStr((StrToInt(div_res[u]) + StrToInt(dec_sum[u]) + 1) mod 10) + dec_res
+            dec_res:=IntToStr(StrToInt(div_res[u]) + StrToInt(dec_sum[u]) + 1)[2] + dec_res
             end
 
           else begin
-            dec_res:=IntToStr((StrToInt(div_res[u]) + StrToInt(dec_sum[u])) mod 10) + dec_res;
+            dec_res:=IntToStr(StrToInt(div_res[u]) + StrToInt(dec_sum[u]))[2] + dec_res;
             end;
 
           remem:=true;
@@ -266,11 +266,11 @@ for i:=1 to sep - 1 do
     else begin
       if (remem = true) then
         begin
-        num_res:=IntToStr((StrToInt(num_mul[u]) * 2 + 1) mod 10) + num_res;
+        num_res:=IntToStr(StrToInt(num_mul[u]) * 2 + 1)[2] + num_res;
         end
 
       else begin
-        num_res:=IntToStr((StrToInt(num_mul[u]) * 2) mod 10) + num_res;
+        num_res:=IntToStr(StrToInt(num_mul[u]) * 2)[2] + num_res;
         remem:=true;
         end;
       end;
@@ -280,7 +280,7 @@ for i:=1 to sep - 1 do
 
   if (s[i] = '1') then
     begin
-    num_res:=IntToStr(StrToInt(num_res[length(num_res)]) + 1)[1];
+    num_res[length(num_res)]:=IntToStr(StrToInt(num_res[length(num_res)]) + 1)[1];
     end;
 
   num_mul:=num_res;
