@@ -149,12 +149,12 @@ repeat
       begin
       if (remem = true) then
         begin
-        dec_mul[i]:=IntToStr((StrToInt(dec_mul[i]) * 2 + 1) mod 10)[1];
+        dec_mul[i]:=IntToStr(StrToInt(dec_mul[i]) * 2 + 1)[2];
         end
 
       else begin
         remem:=true;
-        dec_mul[i]:=IntToStr((StrToInt(dec_mul[i]) * 2) mod 10)[1];
+        dec_mul[i]:=IntToStr(StrToInt(dec_mul[i]) * 2)[2];
         end;
       end
 
@@ -448,7 +448,7 @@ if (New_Terminal = false) then
     SetconsoleCtrlHandler(@handlerRoutine, TRUE);
 
     clear(0, 0, ScreenXY.x * ScreenXY.y, 0, 0);
-    write('Enter decimal to convert: ');
+    write(TextColor(White), 'Enter decimal to convert: ');
 
     s:=Input(true, true);
 
@@ -474,8 +474,6 @@ if (New_Terminal = false) then
       key:=readkey;
       if (key = #3) then CopyToClip(num_res + dec_res);
     until (key <> #3);
-
-    TextColor(White);
 
     decimal:=false; negative:=false;
   until (key = #27);
