@@ -137,7 +137,7 @@ end;
 
 Procedure Decimal_part;
 begin
-dec_sum:='0.0'; div_res:='1.0'; dec_res:='';
+div_res:='1.0'; dec_sum:='0.0'; dec_res:='';
 
 for i:=sep + 1 to length(s) do
   begin
@@ -182,17 +182,8 @@ for i:=sep + 1 to length(s) do
 
   if (s[i] <> '0') then
     begin
-    dec_res:='';
     remem:=false;
-
-    if (length(div_res) > length(dec_sum)) then
-      begin
-      dec_sum:=dec_sum + dupestring('0', length(div_res) - length(dec_sum));
-      end
-
-    else begin
-      div_res:=div_res + dupestring('0', length(dec_sum) - length(div_res));
-      end;
+    dec_sum:=dec_sum + dupestring('0', length(div_res) - length(dec_sum)); dec_res:='';
 
     for u:=length(dec_sum) downto 2 do
       begin
@@ -244,7 +235,7 @@ end;
 
 Procedure Integer_part;
 begin
-num_res:=''; num_mul:='0';
+num_mul:='0'; num_res:='';
 
 for i:=1 to sep - 1 do
   begin
@@ -336,7 +327,7 @@ repeat
       begin
       GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
       write(' ');
-      GotoXY(ScreenXY.x - 1, WhereXY.y);
+      GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
       end
 
     else begin
