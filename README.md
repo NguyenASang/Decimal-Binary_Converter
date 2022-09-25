@@ -7,7 +7,7 @@ A high precision Decimal/Binary converter written in Free Pascal
 - Quick calculation and high precision 
 - Highlight the [loop section](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-) for special cases when converting to binary
 - Automatically remove unnecessary parts in output and input (EG: 0001.100 -> 1.1)
-- Bypass the [character limit](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-input-limit-in-free-pascals-console-) when you type input
+- Bypass the character limit when you type input
 
 ## Compatibility
 
