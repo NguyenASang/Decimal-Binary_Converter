@@ -106,6 +106,7 @@ StrData:=Pchar(text);
 
 Openclipboard(0);
   EmptyClipboard;
+
   hClipData:=GlobalAlloc(GMEM_MOVEABLE, length(strData) + 1);
   pchData:=GlobalLock(hClipData);
   strcopy(pchData, LPCSTR(StrData));
@@ -287,7 +288,7 @@ end;
 Procedure Input;
 begin
 Clear(0, 0, ScreenXY.x * ScreenXY.y, 0, 0);
-write('Enter binary to convert: ');
+write(TextColor(White), 'Enter binary to convert: ');
 
 repeat
   key:=readkey;
@@ -398,15 +399,13 @@ if (New_Terminal = false) then
       if (key = #3) then CopyToClip(num_res + dec_res);
     until (key <> #3);
 
-    TextColor(White);
-
     s:='';
     decimal:=false; negative:=false;
   until (key = #27);
   end
 
 else begin
-  Write(TextColor(Red), 'Attention: ');
+  write(TextColor(Red), 'Attention: ');
 
   write(TextColor(White), 'Seem like you''re running this program with the new Microsoft Terminal. Since there are many errors that can be caused in this new Terminal, I recommend you to use the default terminal by running this program as administrator');
 
