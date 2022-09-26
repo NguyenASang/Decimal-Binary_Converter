@@ -102,12 +102,10 @@ Procedure CopyToClip(text: ansistring);
 var pchData, StrData: pchar;
     hClipData: HGlobal;
 begin
+StrData:=Pchar(text);
+
 Openclipboard(0);
   EmptyClipboard;
-
-  strData:=Stralloc(length(text) + 1);
-  StrPCopy(strData, text);
-
   hClipData:=GlobalAlloc(GMEM_MOVEABLE, length(strData) + 1);
   pchData:=GlobalLock(hClipData);
   strcopy(pchData, LPCSTR(StrData));
@@ -261,8 +259,8 @@ for i:=1 to sep - 1 do
         end
 
       else begin
-        num_res:=IntToStr(StrToInt(num_mul[u]) * 2)[2] + num_res;
         remem:=true;
+        num_res:=IntToStr(StrToInt(num_mul[u]) * 2)[2] + num_res;
         end;
       end;
 
