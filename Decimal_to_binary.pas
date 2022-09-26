@@ -101,12 +101,11 @@ Procedure CopyToClip(text: ansistring);
 var pchData, StrData: pchar;
     hClipData: HGlobal;
 begin
+StrData:=Pchar(text);
+
 Openclipboard(0);
   EmptyClipboard;
-
-  strData:=Stralloc(length(text) + 1);
-  StrPCopy(strData, text);
-
+  
   hClipData:=GlobalAlloc(GMEM_MOVEABLE, length(strData) + 1);
   pchData:=GlobalLock(hClipData);
   strcopy(pchData, LPCSTR(StrData));
