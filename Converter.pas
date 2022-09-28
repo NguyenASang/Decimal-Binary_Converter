@@ -5,8 +5,8 @@ const Green       = $2;
       Red         = $4;
       White       = $7;
 
-var s, num_res, dec_res, limit: ansistring;
-    ctrl_c, decimal, negative, remem, show_loop, dec_to_bin: boolean;
+var ctrl_c, decimal, negative, remem, show_loop, show_tip, ask_trunc, auto_copy: boolean;
+    s, num_res, dec_res: ansistring;
     i, u, sep: longint;
     pre_pos: coord;
     key: char;
@@ -114,7 +114,23 @@ Openclipboard(0);
   SetClipboardData(CF_TEXT, hclipData);
 CloseClipboard;
 
-Clear(0, WhereXY.y - 2, ScreenXY.x, 0, WhereXY.y - 2);
+if (show_tip = true) then Clear(0, WhereXY.y - 2, ScreenXY.x, 0, WhereXY.y - 2)
+
+else begin
+  Clear(0, WhereXY.y, ScreenXY.x, 0, WhereXY.y);
+
+  GotoXY(0, WhereXY.y + 2);
+
+  write(TextColor(White), 'Press any key to ');
+
+  write(TextColor(Green), 'back ');
+
+  write(TextColor(White), '| Esc to ');
+
+  write(TextColor(Red), 'exit');
+
+  GotoXY(0, WhereXY.y - 2);
+  end;
 
 Write(TextColor(Green), 'Status: ');
 
@@ -131,6 +147,95 @@ var command_res: ansistring;
 begin
 runcommand('cmd', ['/c', 'tasklist /v /fi "ImageName eq WindowsTerminal.exe"'], command_res);
 if (pos(ParamStr(0), command_res) <> 0) then New_Terminal:=true else New_Terminal:=false;
+end;
+
+//============================ Input check ============================//
+
+Function Input(check_dec, check_neg: boolean; char_check: array of ansistring): ansistring;
+begin
+input:='';
+
+repeat
+  key:=readkey;
+                                                 //===== Prevent Ctrl + V from being treated as normal input =====//
+  if (AnsiMatchText(key, char_check) = true) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (check_neg = true) and (length(input) = 0) and (key = '-') or (check_dec = true) and (decimal = false) and (key = '.') then
+    begin
+    if (key = '-') then negative:=true;
+
+    if (key = '.') then decimal:=true;
+
+    input:=input + key;
+
+    write(key);
+    end;
+
+  if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then
+    begin
+    i:=length(input);
+    input:=input + PasteFromClip;
+
+    write(Copy(input, i + 1, length(input)));
+
+    if (pos('.', input) > 0) then decimal:=true;
+
+    if (pos('-', input) > 0) then negative:=true;
+    end;
+
+  if (length(input) > 0) then
+    begin
+    if (key = #8) then
+      begin
+      if (WhereXY.x = 0) then
+        begin
+        GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
+        write(' ');
+        GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
+        end
+
+      else begin
+        GotoXY(WhereXY.x - 1, WhereXY.y);
+        write(' ');
+        GotoXY(WhereXY.x - 1, WhereXY.y);
+        end;
+
+      if (input[length(input)] = '.') then decimal:=false;
+
+      if (input[length(input)] = '-') then negative:=false;
+
+      delete(input, length(input), 1);
+      end;
+
+    if (key = #13) then
+      begin
+      if (check_neg = true) and (negative = true) then delete(input, 1, 1);
+
+      if (check_dec = true) and (decimal = true) and (input[length(input)] in ['0', '.']) then
+        begin
+        repeat
+          if (input[length(input)] = '.') then decimal:=false;
+
+          delete(input, length(input), 1);
+        until (AnsiMatchText(input[length(input)], char_check) = true) or (decimal = false);
+        end;
+
+      if (length(input) > 1) and (input[1] in ['0', '.']) then
+        begin
+        repeat
+          if (input[1] = '.') then input:='0' + input
+
+          else delete(input, 1, 1);
+        until (AnsiMatchText(input[1], char_check) = true) or (input[2] = '.') or (input = '0');
+        end;
+
+      if (check_dec = true) and (check_neg = true) then
+        begin
+        if (decimal = true) then sep:=pos('.', input)
+
+        else sep:=length(input) + 1;
+        end;
+      end;
+    end;
+until (length(input) > 0) and (key = #13);
 end;
 
 //============================ Binary to Decimal ============================//
@@ -291,8 +396,27 @@ end;
 //============================ Decimal to Binary ============================//
 
 Procedure Decimal_to_Binary;
-var dec_mul, compare: ansistring;
+var dec_mul, compare, limit: ansistring;
 begin
+if (ask_trunc = true) then
+  begin
+  clear(0, WhereXY.y - 1, ScreenXY.x * 6, 0, WhereXY.y - 1);
+
+  pre_pos:=WhereXY;
+
+  writeln('How many digits do you want to display ?');
+
+  limit:=Input(false, false, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+
+  clear(0, pre_pos.y, ScreenXY.x * (ScreenXY.y - pre_pos.y), 0, pre_pos.y);
+
+  write('Convert to binary:'#13#10, num_res);
+
+  show_loop:=false;
+  end
+
+else show_loop:=true;
+
 write('.');
 
 dec_mul:='0' + Copy(s, sep, length(s)); dec_res:='.';
@@ -396,7 +520,7 @@ repeat
     end;
 until (dec_mul = '0') or (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit);
 
-if (dec_mul <> '0') then
+if (show_loop = true) and (dec_mul <> '0') then
   begin
   writeln(TextColor(White), '...');
 
@@ -466,190 +590,151 @@ write(num_res);
 if (decimal = true) then Decimal_to_Binary;
 end;
 
-//============================ Input check ============================//
-
-Function Input(check_dec, check_neg: boolean): ansistring;
-var char_check: array of ansistring;
-begin
-input:='';
-
-if (dec_to_bin = true) then char_check:=['0', '1', '2', '3', '4', '5', '6', '7', '8', '8', '9'] else char_check:=['0', '1'];
-
-repeat
-  key:=readkey;
-                             //===== Prevent Ctrl + V from being treated as normal input =====//
-  if (AnsiMatchText(key, char_check) = true) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (check_neg = true) and (length(input) = 0) and (key = '-') or (check_dec = true) and (decimal = false) and (key = '.') then
-    begin
-    if (key = '-') then negative:=true;
-
-    if (key = '.') then decimal:=true;
-
-    input:=input + key;
-
-    write(key);
-    end;
-
-  if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then
-    begin
-    i:=length(input);
-    input:=input + PasteFromClip;
-
-    write(Copy(input, i + 1, length(input)));
-
-    if (pos('.', input) > 0) then decimal:=true;
-
-    if (pos('-', input) > 0) then negative:=true;
-    end;
-
-  if (length(input) > 0) then
-    begin
-    if (key = #8) then
-      begin
-      if (WhereXY.x = 0) then
-        begin
-        GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
-        write(' ');
-        GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
-        end
-
-      else begin
-        GotoXY(WhereXY.x - 1, WhereXY.y);
-        write(' ');
-        GotoXY(WhereXY.x - 1, WhereXY.y);
-        end;
-
-      if (input[length(input)] = '.') then decimal:=false;
-
-      if (input[length(input)] = '-') then negative:=false;
-
-      delete(input, length(input), 1);
-      end;
-
-    if (key = #13) then
-      begin
-      if (check_neg = true) and (negative = true) then delete(input, 1, 1);
-
-      if (check_dec = true) and (decimal = true) and (input[length(input)] in ['0', '.']) then
-        begin
-        repeat
-          if (input[length(input)] = '.') then decimal:=false;
-
-          delete(input, length(input), 1);
-        until (AnsiMatchText(input[length(input)], char_check) = true) or (decimal = false);
-        end;
-
-      if (length(input) > 1) and (input[1] in ['0', '.']) then
-        begin
-        repeat
-          if (input[1] = '.') then input:='0' + input
-
-          else delete(input, 1, 1);
-        until (AnsiMatchText(input[1], char_check) = true) or (input[2] = '.') or (input = '0');
-        end;
-
-      if (check_dec = true) and (check_neg = true) then
-        begin
-        if (decimal = true) then sep:=pos('.', input)
-
-        else sep:=length(input) + 1;
-        end;
-
-      if (decimal = true) and (check_dec = true) then
-        begin
-        write(#13#10#13#10'Do you want to show looping part of the decimal part ? ');
-
-        writeln('Y = Yes | N = No');
-
-        write(TextColor(Red), #13#10'Warning: ');
-
-        writeln(TextColor(White), 'Choosing "Yes" will provide more accurate results, but it can sometimes take some time to calculate.');
-
-        writeln('         Choosing "No" will give you an option to choose how many digits you want to display.');
-
-        write(TextColor(LightYellow), #13#10'Tip: ');
-
-        write(TextColor(White), 'You can pause the converter by pressing Esc while it''s converting');
-
-        repeat
-          key:=readkey;
-
-          case lowercase(key) of
-            'y' : begin
-                  clear(0, WhereXY.y - 5, ScreenXY.x * 6, 0, WhereXY.y - 7);
-
-                  show_loop:=true;
-                  exit;
-                  end;
-
-            'n' : begin
-                  clear(0, WhereXY.y - 5, ScreenXY.x * 6, 0, WhereXY.y - 5);
-
-                  pre_pos:=WhereXY;
-
-                  writeln('How many digits do you want to display ?');
-
-                  limit:=Input(false, false);
-
-                  clear(0, pre_pos.y, ScreenXY.x * (ScreenXY.y - pre_pos.y), 0, pre_pos.y - 2);
-
-                  show_loop:=false;
-                  exit;
-                  end;
-          end;
-        until (false); // <- Trick to repeat forever without condition
-        end;
-      end;
-    end;
-until (length(input) > 0) and (key = #13);
-end;
-
 begin
 if (New_Terminal = false) then
   begin
+  show_tip:=true;
+
   repeat
     ctrl_c:=false;
     SetconsoleCtrlHandler(@handlerRoutine, TRUE);
 
     clear(0, 0, ScreenXY.x * ScreenXY.y, 0, 0);
-    write(TextColor(White), 'Choose a converter: ');
 
-    write(#13#10, '[1] Decimal to binary ');
-    writeln(#13#10, '[2] Binary to decimal');
+    //This design is inspired by https://github.com/abbodi1406/KMS_VL_ALL_AIO
+    writeln(TextColor(White), '  ', dupestring('_', 59));
+
+    writeln(#13#10'      Main options:'#13#10);
+    writeln('  [1] Decimal to Binary');
+    writeln('  [2] Binary To Decimal');
+
+    writeln('  ', dupestring('_', 59));
+
+    writeln(#13#10'      Configuration:'#13#10);
+
+    write('  [3] Show tips                                         ');
+    if (show_tip = false) then writeln(TextColor(Red), '[No]') else  writeln('[Yes]');
+
+    write(TextColor(White), '  [4] Auto copy result to clipboard                     ');
+    if (auto_copy = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]');
+
+    write(TextColor(White), '  [5] Ask for truncating (Decimal to Binary)            ');
+    if (ask_trunc = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]');
+
+    writeln(TextColor(White), '  ', dupestring('_', 59), #13#10);
+
+    writeln('      Other options:'#13#10);
+    writeln('  [I] Read in-depth information');
+
+    writeln('  ', dupestring('_', 59), #13#10);
+
+    write('  Press key to choose options or press Esc key to Exit: ');
 
     repeat
       key:=readkey;
-      case key of
-        '1': dec_to_bin:=true;
-        '2': dec_to_bin:=false;
+
+      case lowercase(key) of
+        '1': begin
+             Clear(0, 0, ScreenXY.x * (ScreenXY.y - WhereXY.y), 0, 0);
+
+             write(TextColor(White), 'Enter decimal to convert: ');
+
+             s:=Input(true, true, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+
+             writeln(#13#10#13#10'Convert to binary: ');
+
+             Integer_to_Binary;
+
+             break;
+             end;
+
+        '2': begin
+             Clear(0, 0, ScreenXY.x * (ScreenXY.y - WhereXY.y), 0, 0);
+
+             write(TextColor(White), 'Enter binary to convert: ');
+
+             s:=Input(true, true, ['0', '1']);
+
+             writeln(#13#10#13#10'Convert to decimal: ');
+
+             Binary_to_Integer;
+
+             break;
+             end;
+
+        '3': begin
+             if (show_tip = false) then
+               begin
+               show_tip:=true;
+
+               GotoXY(WhereXY.x, WhereXY.y - 10);
+               write(TextColor(Green), '[Yes]');
+               GotoXY(WhereXY.x - 5, WhereXY.y + 10);
+               end
+
+             else begin
+               show_tip:=false;
+
+               GotoXY(WhereXY.x, WhereXY.y - 10);
+               write(TextColor(Red), '[No] ');
+               GotoXY(WhereXY.x - 5, WhereXY.y + 10);
+               end;
+             end;
+
+        '4': begin
+             if (auto_copy = false) then
+               begin
+               auto_copy:=true;
+
+               GotoXY(WhereXY.x, WhereXY.y - 9);
+               write(TextColor(Green), '[Yes]');
+               GotoXY(WhereXY.x - 5, WhereXY.y + 9);
+               end
+
+             else begin
+               auto_copy:=false;
+
+               GotoXY(WhereXY.x, WhereXY.y - 9);
+               write(TextColor(Red), '[No] ');
+               GotoXY(WhereXY.x - 5, WhereXY.y + 9);
+               end;
+             end;
+
+        '5': begin
+             if (ask_trunc = false) then
+               begin
+               ask_trunc:=true;
+
+               GotoXY(WhereXY.x, WhereXY.y - 8);
+               write(TextColor(Green), '[Yes]');
+               GotoXY(WhereXY.x - 5, WhereXY.y + 8);
+               end
+
+             else begin
+               ask_trunc:=false;
+
+               GotoXY(WhereXY.x, WhereXY.y - 8);
+               write(TextColor(Red), '[No] ');
+               GotoXY(WhereXY.x - 5, WhereXY.y + 8);
+               end;
+             end;
+
+        'i': ShellExecute(HInstance, 'open', PChar('https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-'), nil, nil, SW_NORMAL);
+
+        #27: halt;
         end;
     until (key in ['1', '2']);
 
-    Clear(0, 0, ScreenXY.x * (ScreenXY.y - WhereXY.y), 0, 0);
-
-    if (dec_to_bin = true) then write(TextColor(White), 'Enter decimal to convert: ')
-
-    else write(TextColor(White), 'Enter binary to convert: ');
-
-    s:=Input(true, true);
-
-    if (dec_to_bin = true ) then
-      begin
-      writeln(#13#10#13#10'Convert to binary: ');
-      Integer_to_Binary;
-      end
-
-    else begin
-      writeln(#13#10#13#10'Convert to decimal: ');
-      Binary_to_Integer;
-      end;
-
     ctrl_c:=true;
 
-    write(TextColor(LightYellow), #13#10#13#10'Tip: ');
+    if (show_tip = true) then
+      begin
+      write(TextColor(LightYellow), #13#10#13#10'Tip: ');
 
-    writeln(TextColor(White), 'You can copy the result by pressing Ctrl + C');
+      write(TextColor(White), 'You can copy the result by pressing Ctrl + C');
+      end;
 
-    write(#13#10'Press any key to ');
+    write(#13#10#13#10'Press any key to ');
 
     write(TextColor(Green), 'back ');
 
@@ -657,10 +742,18 @@ if (New_Terminal = false) then
 
     write(TextColor(Red), 'exit');
 
-    repeat
-      key:=readkey;
-      if (key = #3) then CopyToClip(num_res + dec_res);
-    until (key <> #3);
+    if (auto_copy = false) then
+      begin
+      repeat
+        key:=readkey;
+        if (key = #3) then CopyToClip(num_res + dec_res);
+      until (key <> #3);
+      end
+
+    else begin
+      CopyToClip(num_res + dec_res);
+      repeat until readkey <> '';
+      end;
 
     decimal:=false; negative:=false;
   until (key = #27);
