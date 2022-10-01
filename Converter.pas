@@ -132,7 +132,7 @@ else begin
   GotoXY(0, WhereXY.y - 2);
   end;
 
-Write(TextColor(Green), 'Status: ');
+write(TextColor(Green), 'Status: ');
 
 write(TextColor(LightYellow), 'Copied');
 end;
@@ -154,6 +154,11 @@ end;
 Function Input(check_dec, check_neg: boolean; char_check: array of ansistring): ansistring;
 begin
 input:='';
+
+if (check_dec = true) and (check_neg = true) then
+  begin
+  decimal:=false; negative:=false;
+  end;
 
 repeat
   key:=readkey;
@@ -338,6 +343,8 @@ for i:=sep + 1 to length(s) do
 
 write(dec_res);
 end;
+
+//============================ Binary to Integer ============================//
 
 Procedure Binary_to_Integer;
 var num_mul: ansistring;
@@ -532,6 +539,8 @@ if (show_loop = true) and (dec_mul <> '0') then
   end;
 end;
 
+//============================ Integer to Binary ============================//
+
 Procedure Integer_to_Binary;
 var num_div: ansistring;
 begin
@@ -590,173 +599,186 @@ write(num_res);
 if (decimal = true) then Decimal_to_Binary;
 end;
 
+Procedure End_screen;
+begin
+ctrl_c:=true;
+
+if (show_tip = true) then
+  begin
+  write(TextColor(LightYellow), #13#10#13#10'Tip: ');
+
+  write(TextColor(White), 'You can copy the result by pressing Ctrl + C');
+  end;
+
+write(#13#10#13#10'Press backspace to ');
+
+write(TextColor(Green), 'back ');
+
+write(TextColor(White), '| Esc to ');
+
+write(TextColor(Red), 'return ');
+
+write(TextColor(White), 'to main menu');
+
+if (auto_copy = false) then
+  begin
+  repeat
+    key:=readkey;
+    if (key = #3) then CopyToClip(num_res + dec_res);
+  until (key <> #3);
+  end
+
+else begin
+  CopyToClip(num_res + dec_res);
+  repeat key:=readkey until key <> '';
+  end;
+end;
+
+procedure Welcome_screen;
+begin
+clear(0, 0, ScreenXY.x * ScreenXY.y, 0, 0);
+
+//This design is inspired by https://github.com/abbodi1406/KMS_VL_ALL_AIO
+writeln(TextColor(White), '  ', dupestring('_', 59));
+
+writeln(#13#10'      Main options:'#13#10);
+writeln('  [1] Decimal to Binary');
+writeln('  [2] Binary To Decimal');
+
+writeln('  ', dupestring('_', 59));
+
+writeln(#13#10'      Configuration:'#13#10);
+
+write('  [3] Show tips                                         ');
+if (show_tip = false) then writeln(TextColor(Red), '[No]') else writeln('[Yes]');
+
+write(TextColor(White), '  [4] Auto copy result to clipboard                     ');
+if (auto_copy = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]');
+
+write(TextColor(White), '  [5] Ask for truncating (Decimal to Binary)            ');
+if (ask_trunc = false) then writeln(TextColor(Red), '[No]') else writeln('[Yes]');
+
+writeln(TextColor(White), '  ', dupestring('_', 59), #13#10);
+
+writeln('      Other options:'#13#10);
+writeln('  [I] What is the forever loop part (Decimal to Binary) ?');
+
+writeln('  ', dupestring('_', 59), #13#10);
+
+write('  Press key to choose options or press Esc key to Exit: ');
+
+repeat
+  if (key = #8) then
+    begin
+    if (u = 0) then key:='1' else key:='2';
+    end
+
+  else key:=readkey;
+
+  case lowercase(key) of
+    '1': begin
+         Clear(0, 0, ScreenXY.x * (ScreenXY.y - WhereXY.y), 0, 0);
+
+         write(TextColor(White), 'Enter decimal to convert: ');
+
+         s:=Input(true, true, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+
+         writeln(#13#10#13#10'Convert to binary: ');
+
+         Integer_to_Binary;
+
+         End_screen;
+         end;
+
+    '2': begin
+         Clear(0, 0, ScreenXY.x * (ScreenXY.y - WhereXY.y), 0, 0);
+
+         write(TextColor(White), 'Enter binary to convert: ');
+
+         s:=Input(true, true, ['0', '1']);
+
+         writeln(#13#10#13#10'Convert to decimal: ');
+
+         Binary_to_Integer;
+
+         End_screen;
+         end;
+
+    '3': begin
+         if (show_tip = false) then
+           begin
+           show_tip:=true;
+
+           GotoXY(WhereXY.x, WhereXY.y - 10);
+           write(TextColor(Green), '[Yes]');
+           GotoXY(WhereXY.x - 5, WhereXY.y + 10);
+           end
+
+         else begin
+           show_tip:=false;
+
+           GotoXY(WhereXY.x, WhereXY.y - 10);
+           write(TextColor(Red), '[No] ');
+           GotoXY(WhereXY.x - 5, WhereXY.y + 10);
+           end;
+         end;
+
+    '4': begin
+         if (auto_copy = false) then
+           begin
+           auto_copy:=true;
+
+           GotoXY(WhereXY.x, WhereXY.y - 9);
+           write(TextColor(Green), '[Yes]');
+           GotoXY(WhereXY.x - 5, WhereXY.y + 9);
+           end
+
+         else begin
+           auto_copy:=false;
+
+           GotoXY(WhereXY.x, WhereXY.y - 9);
+           write(TextColor(Red), '[No] ');
+           GotoXY(WhereXY.x - 5, WhereXY.y + 9);
+           end;
+         end;
+
+    '5': begin
+         if (ask_trunc = false) then
+           begin
+           ask_trunc:=true;
+
+           GotoXY(WhereXY.x, WhereXY.y - 8);
+           write(TextColor(Green), '[Yes]');
+           GotoXY(WhereXY.x - 5, WhereXY.y + 8);
+           end
+
+         else begin
+           ask_trunc:=false;
+
+           GotoXY(WhereXY.x, WhereXY.y - 8);
+           write(TextColor(Red), '[No] ');
+           GotoXY(WhereXY.x - 5, WhereXY.y + 8);
+           end;
+         end;
+
+    'i': ShellExecute(HInstance, 'open', PChar('https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-'), nil, nil, SW_NORMAL);
+
+    #27: halt;
+  end;
+until (key = #27);
+end;
+
 begin
 if (New_Terminal = false) then
   begin
-  show_tip:=true;
+  ask_trunc:=true; show_tip:=true;
 
   repeat
     ctrl_c:=false;
     SetconsoleCtrlHandler(@handlerRoutine, TRUE);
 
-    clear(0, 0, ScreenXY.x * ScreenXY.y, 0, 0);
-
-    //This design is inspired by https://github.com/abbodi1406/KMS_VL_ALL_AIO
-    writeln(TextColor(White), '  ', dupestring('_', 59));
-
-    writeln(#13#10'      Main options:'#13#10);
-    writeln('  [1] Decimal to Binary');
-    writeln('  [2] Binary To Decimal');
-
-    writeln('  ', dupestring('_', 59));
-
-    writeln(#13#10'      Configuration:'#13#10);
-
-    write('  [3] Show tips                                         ');
-    if (show_tip = false) then writeln(TextColor(Red), '[No]') else  writeln('[Yes]');
-
-    write(TextColor(White), '  [4] Auto copy result to clipboard                     ');
-    if (auto_copy = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]');
-
-    write(TextColor(White), '  [5] Ask for truncating (Decimal to Binary)            ');
-    if (ask_trunc = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]');
-
-    writeln(TextColor(White), '  ', dupestring('_', 59), #13#10);
-
-    writeln('      Other options:'#13#10);
-    writeln('  [I] Read in-depth information');
-
-    writeln('  ', dupestring('_', 59), #13#10);
-
-    write('  Press key to choose options or press Esc key to Exit: ');
-
-    repeat
-      key:=readkey;
-
-      case lowercase(key) of
-        '1': begin
-             Clear(0, 0, ScreenXY.x * (ScreenXY.y - WhereXY.y), 0, 0);
-
-             write(TextColor(White), 'Enter decimal to convert: ');
-
-             s:=Input(true, true, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
-
-             writeln(#13#10#13#10'Convert to binary: ');
-
-             Integer_to_Binary;
-
-             break;
-             end;
-
-        '2': begin
-             Clear(0, 0, ScreenXY.x * (ScreenXY.y - WhereXY.y), 0, 0);
-
-             write(TextColor(White), 'Enter binary to convert: ');
-
-             s:=Input(true, true, ['0', '1']);
-
-             writeln(#13#10#13#10'Convert to decimal: ');
-
-             Binary_to_Integer;
-
-             break;
-             end;
-
-        '3': begin
-             if (show_tip = false) then
-               begin
-               show_tip:=true;
-
-               GotoXY(WhereXY.x, WhereXY.y - 10);
-               write(TextColor(Green), '[Yes]');
-               GotoXY(WhereXY.x - 5, WhereXY.y + 10);
-               end
-
-             else begin
-               show_tip:=false;
-
-               GotoXY(WhereXY.x, WhereXY.y - 10);
-               write(TextColor(Red), '[No] ');
-               GotoXY(WhereXY.x - 5, WhereXY.y + 10);
-               end;
-             end;
-
-        '4': begin
-             if (auto_copy = false) then
-               begin
-               auto_copy:=true;
-
-               GotoXY(WhereXY.x, WhereXY.y - 9);
-               write(TextColor(Green), '[Yes]');
-               GotoXY(WhereXY.x - 5, WhereXY.y + 9);
-               end
-
-             else begin
-               auto_copy:=false;
-
-               GotoXY(WhereXY.x, WhereXY.y - 9);
-               write(TextColor(Red), '[No] ');
-               GotoXY(WhereXY.x - 5, WhereXY.y + 9);
-               end;
-             end;
-
-        '5': begin
-             if (ask_trunc = false) then
-               begin
-               ask_trunc:=true;
-
-               GotoXY(WhereXY.x, WhereXY.y - 8);
-               write(TextColor(Green), '[Yes]');
-               GotoXY(WhereXY.x - 5, WhereXY.y + 8);
-               end
-
-             else begin
-               ask_trunc:=false;
-
-               GotoXY(WhereXY.x, WhereXY.y - 8);
-               write(TextColor(Red), '[No] ');
-               GotoXY(WhereXY.x - 5, WhereXY.y + 8);
-               end;
-             end;
-
-        'i': ShellExecute(HInstance, 'open', PChar('https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-'), nil, nil, SW_NORMAL);
-
-        #27: halt;
-        end;
-    until (key in ['1', '2']);
-
-    ctrl_c:=true;
-
-    if (show_tip = true) then
-      begin
-      write(TextColor(LightYellow), #13#10#13#10'Tip: ');
-
-      write(TextColor(White), 'You can copy the result by pressing Ctrl + C');
-      end;
-
-    write(#13#10#13#10'Press any key to ');
-
-    write(TextColor(Green), 'back ');
-
-    write(TextColor(White), '| Esc to ');
-
-    write(TextColor(Red), 'exit');
-
-    if (auto_copy = false) then
-      begin
-      repeat
-        key:=readkey;
-        if (key = #3) then CopyToClip(num_res + dec_res);
-      until (key <> #3);
-      end
-
-    else begin
-      CopyToClip(num_res + dec_res);
-      repeat until readkey <> '';
-      end;
-
-    decimal:=false; negative:=false;
-  until (key = #27);
+    Welcome_screen;
+  until (false);
   end
 
 else begin
