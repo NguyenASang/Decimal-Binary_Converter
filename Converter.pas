@@ -656,7 +656,7 @@ write(TextColor(White), '  [4] Auto copy result to clipboard                    
 if (auto_copy = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]');
 
 write(TextColor(White), '  [5] Ask for truncating (Decimal to Binary)            ');
-if (ask_trunc = false) then writeln(TextColor(Red), '[No]') else writeln('[Yes]');
+if (ask_trunc = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]');
 
 writeln(TextColor(White), '  ', dupestring('_', 59), #13#10);
 
@@ -749,7 +749,21 @@ repeat
 
            GotoXY(WhereXY.x, WhereXY.y - 8);
            write(TextColor(Green), '[Yes]');
-           GotoXY(WhereXY.x - 5, WhereXY.y + 8);
+
+           if (show_tip = true) then
+             begin
+             GotoXY(2, WhereXY.y + 16);
+
+             Clear(WhereXY.x, WhereXY.y, ScreenXY.x, WhereXY.x, WhereXY.y);
+
+             write(TextColor(LightYellow), 'Tip: ');
+
+             write(TextColor(White), 'To get good accuracy for your result, I recommend choosing at least 20 digits');
+
+             GotoXY(WhereXY.x - 28, WhereXY.y - 8)
+             end
+
+           else GotoXY(WhereXY.x - 5, WhereXY.y + 8);
            end
 
          else begin
@@ -757,7 +771,19 @@ repeat
 
            GotoXY(WhereXY.x, WhereXY.y - 8);
            write(TextColor(Red), '[No] ');
-           GotoXY(WhereXY.x - 5, WhereXY.y + 8);
+
+           if (show_tip = true) then
+             begin
+             GotoXY(2, WhereXY.y + 16);
+
+             write(TextColor(LightYellow), 'Tip: ');
+
+             write(TextColor(White), 'Some decimals may take a long time to display as binary, you can always pause the converter by pressing ESC key');
+
+             GotoXY(WhereXY.x - 62, WhereXY.y - 8);
+             end
+
+           else GotoXY(WhereXY.x - 5, WhereXY.y + 8);
            end;
          end;
 
@@ -771,7 +797,7 @@ end;
 begin
 if (New_Terminal = false) then
   begin
-  ask_trunc:=true; show_tip:=true;
+  show_tip:=true;
 
   repeat
     ctrl_c:=false;
