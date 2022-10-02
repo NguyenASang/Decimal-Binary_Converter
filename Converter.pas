@@ -599,6 +599,8 @@ write(num_res);
 if (decimal = true) then Decimal_to_Binary;
 end;
 
+//============================ User interface ============================//
+
 Procedure End_screen;
 begin
 ctrl_c:=true;
@@ -665,7 +667,7 @@ writeln('  [I] What is the forever loop part (Decimal to Binary) ?');
 
 writeln('  ', dupestring('_', 59), #13#10);
 
-write('  Press key to choose options or press Esc key to Exit: ');
+write('  Press key to choose options or Esc key to Exit: ');
 
 repeat
   if (key = #8) then
@@ -705,40 +707,44 @@ repeat
          end;
 
     '3': begin
+         Clear(2, WhereXY.y + 8, ScreenXY.x, WhereXY.x, WhereXY.y);
+
          if (show_tip = false) then
            begin
            show_tip:=true;
 
-           GotoXY(WhereXY.x, WhereXY.y - 10);
+           GotoXY(WhereXY.x + 6, WhereXY.y - 10);
            write(TextColor(Green), '[Yes]');
-           GotoXY(WhereXY.x - 5, WhereXY.y + 10);
+           GotoXY(WhereXY.x - 11, WhereXY.y + 10);
            end
 
          else begin
            show_tip:=false;
 
-           GotoXY(WhereXY.x, WhereXY.y - 10);
+           GotoXY(WhereXY.x + 6, WhereXY.y - 10);
            write(TextColor(Red), '[No] ');
-           GotoXY(WhereXY.x - 5, WhereXY.y + 10);
+           GotoXY(WhereXY.x - 11, WhereXY.y + 10);
            end;
          end;
 
     '4': begin
+         Clear(2, WhereXY.y + 8, ScreenXY.x, WhereXY.x, WhereXY.y);
+
          if (auto_copy = false) then
            begin
            auto_copy:=true;
 
-           GotoXY(WhereXY.x, WhereXY.y - 9);
+           GotoXY(WhereXY.x + 6, WhereXY.y - 9);
            write(TextColor(Green), '[Yes]');
-           GotoXY(WhereXY.x - 5, WhereXY.y + 9);
+           GotoXY(WhereXY.x - 11, WhereXY.y + 9);
            end
 
          else begin
            auto_copy:=false;
 
-           GotoXY(WhereXY.x, WhereXY.y - 9);
+           GotoXY(WhereXY.x + 6, WhereXY.y - 9);
            write(TextColor(Red), '[No] ');
-           GotoXY(WhereXY.x - 5, WhereXY.y + 9);
+           GotoXY(WhereXY.x - 11, WhereXY.y + 9);
            end;
          end;
 
@@ -747,7 +753,7 @@ repeat
            begin
            ask_trunc:=true;
 
-           GotoXY(WhereXY.x, WhereXY.y - 8);
+           GotoXY(WhereXY.x + 6, WhereXY.y - 8);
            write(TextColor(Green), '[Yes]');
 
            if (show_tip = true) then
@@ -760,16 +766,16 @@ repeat
 
              write(TextColor(White), 'To get good accuracy for your result, I recommend choosing at least 20 digits');
 
-             GotoXY(WhereXY.x - 28, WhereXY.y - 8)
+             GotoXY(WhereXY.x - 34, WhereXY.y - 8)
              end
 
-           else GotoXY(WhereXY.x - 5, WhereXY.y + 8);
+           else GotoXY(WhereXY.x - 11, WhereXY.y + 8);
            end
 
          else begin
            ask_trunc:=false;
 
-           GotoXY(WhereXY.x, WhereXY.y - 8);
+           GotoXY(WhereXY.x + 6, WhereXY.y - 8);
            write(TextColor(Red), '[No] ');
 
            if (show_tip = true) then
@@ -780,10 +786,10 @@ repeat
 
              write(TextColor(White), 'Some decimals may take a long time to display as binary, you can always pause the converter by pressing ESC key');
 
-             GotoXY(WhereXY.x - 62, WhereXY.y - 8);
+             GotoXY(WhereXY.x - 68, WhereXY.y - 8);
              end
 
-           else GotoXY(WhereXY.x - 5, WhereXY.y + 8);
+           else GotoXY(WhereXY.x - 11, WhereXY.y + 8);
            end;
          end;
 
@@ -793,6 +799,8 @@ repeat
   end;
 until (key = #27);
 end;
+
+//============================ Main part ============================//
 
 begin
 if (New_Terminal = false) then
