@@ -5,7 +5,7 @@ const Green       = $2;
       Red         = $4;
       White       = $7;
 
-var ctrl_c, decimal, negative, remem, show_loop, show_tip, ask_trunc, auto_copy: boolean;
+var ctrl_c, auto_copy, ask_trunc, show_tip, decimal, negative, remem: boolean;
     s, num_res, dec_res: ansistring;
     i, u, sep: longint;
     pre_pos: coord;
@@ -121,7 +121,7 @@ else begin
 
   GotoXY(0, WhereXY.y + 2);
 
-  write(TextColor(White), 'Press any key to ');
+  write(TextColor(White), 'Press backspace to ');
 
   write(TextColor(Green), 'back ');
 
@@ -404,6 +404,7 @@ end;
 
 Procedure Decimal_to_Binary;
 var dec_mul, compare, limit: ansistring;
+    show_loop: boolean;
 begin
 if (ask_trunc = true) then
   begin
@@ -627,7 +628,7 @@ if (auto_copy = false) then
   repeat
     key:=readkey;
     if (key = #3) then CopyToClip(num_res + dec_res);
-  until (key <> #3);
+  until (key = #27) or (key = #8);
   end
 
 else begin
