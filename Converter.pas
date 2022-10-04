@@ -680,6 +680,8 @@ repeat
 
   case lowercase(key) of
     '1': begin
+         u:=0;
+
          Clear(0, 0, ScreenXY.x * (ScreenXY.y - WhereXY.y), 0, 0);
 
          write(TextColor(White), 'Enter decimal to convert: ');
