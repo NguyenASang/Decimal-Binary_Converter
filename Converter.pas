@@ -633,7 +633,7 @@ if (auto_copy = false) then
 
 else begin
   CopyToClip(num_res + dec_res);
-  repeat key:=readkey until key <> '';
+  repeat key:=readkey until (key <> '');
   end;
 end;
 
@@ -645,6 +645,7 @@ clear(0, 0, ScreenXY.x * ScreenXY.y, 0, 0);
 writeln(TextColor(White), '  ', dupestring('_', 59));
 
 writeln(#13#10'      Main options:'#13#10);
+
 writeln('  [1] Decimal to Binary');
 writeln('  [2] Binary To Decimal');
 
@@ -664,6 +665,7 @@ if (ask_trunc = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]
 writeln(TextColor(White), '  ', dupestring('_', 59), #13#10);
 
 writeln('      Other options:'#13#10);
+
 writeln('  [I] What is the forever loop part (Decimal to Binary) ?');
 
 writeln('  ', dupestring('_', 59), #13#10);
