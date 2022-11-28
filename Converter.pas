@@ -11,6 +11,18 @@ var ctrl_c, auto_copy, ask_trunc, show_tip, decimal, negative, remem: boolean;
     pre_pos: coord;
     key: char;
 
+// Thanks @svecon for those 2 genius functions
+
+Function ChrToInt(c: char): longint;
+begin
+ChrToInt:=ord(c) - 48;
+end;
+
+Function IntToChr(l: longint): char;
+begin
+IntToChr:=chr(l + 48);
+end;
+
 Function WhereXY: coord;
 var cursor_pos: TConsoleScreenBufferInfo;
 begin
@@ -261,18 +273,18 @@ for i:=sep + 1 to length(s) do
 
     if (dividend[u] = '.') then div_res:=div_res + '.'
 
-    else if (StrToInt(dividend[u]) mod 2 = 1) then
+    else if (ChrToInt(dividend[u]) mod 2 = 1) then
       begin
       if (remem = true) then
         begin
-        div_res:=div_res + IntToStr((10 + StrToInt(dividend[u])) div 2);
+        div_res:=div_res + IntToChr((10 + ChrToInt(dividend[u])) div 2);
 
-        if ((10 + StrToInt(dividend[u])) mod 2 = 1) then remem:=true else remem:=false;
+        if ((10 + ChrToInt(dividend[u])) mod 2 = 1) then remem:=true else remem:=false;
         end
 
       else begin
         remem:=true;
-        div_res:=div_res + IntToStr(StrToInt(dividend[u]) div 2);
+        div_res:=div_res + IntToChr(ChrToInt(dividend[u]) div 2);
 
         if (u = length(dividend)) then dividend:=dividend + '0';
         end;
@@ -282,11 +294,11 @@ for i:=sep + 1 to length(s) do
       if (remem = true) then
         begin
         remem:=false;
-        div_res:=div_res + IntToStr((10 + StrToInt(dividend[u])) div 2);
+        div_res:=div_res + IntToChr((10 + ChrToInt(dividend[u])) div 2);
         end
 
       else begin
-        div_res:=div_res + IntToStr((StrToInt(dividend[u]) div 2));
+        div_res:=div_res + IntToChr((ChrToInt(dividend[u]) div 2));
         end;
       end;
   until (u = length(dividend));
@@ -300,34 +312,34 @@ for i:=sep + 1 to length(s) do
       begin
       if (div_res[u] <> '.') and (dec_sum[u] <> '.') then
         begin
-        if (StrToInt(div_res[u]) + StrToInt(dec_sum[u]) < 10) then
+        if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) < 10) then
           begin
           if (remem = true) then
             begin
-            if (StrToInt(div_res[u]) + StrToInt(dec_sum[u]) + 1 = 10) then
+            if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + 1 = 10) then
               begin
               dec_res:='0' + dec_res;
               end
 
             else begin
               remem:=false;
-              dec_res:=IntToStr(StrToInt(div_res[u]) + StrToInt(dec_sum[u]) + 1) + dec_res;
+              dec_res:=IntToChr(ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + 1) + dec_res;
               end;
             end
 
           else begin
-            dec_res:=IntToStr(StrToInt(div_res[u]) + StrToInt(dec_sum[u])) + dec_res;
+            dec_res:=IntToChr(ChrToInt(div_res[u]) + ChrToInt(dec_sum[u])) + dec_res;
             end;
           end
 
         else begin
           if (remem = true) then
             begin
-            dec_res:=IntToStr(StrToInt(div_res[u]) + StrToInt(dec_sum[u]) + 1)[2] + dec_res
+            dec_res:=IntToChr((ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + 1) mod 10) + dec_res
             end
 
           else begin
-            dec_res:=IntToStr(StrToInt(div_res[u]) + StrToInt(dec_sum[u]))[2] + dec_res;
+            dec_res:=IntToChr((ChrToInt(div_res[u]) + ChrToInt(dec_sum[u])) mod 10) + dec_res;
             end;
 
           remem:=true;
@@ -357,26 +369,27 @@ for i:=1 to sep - 1 do
 
   for u:=length(num_mul) downto 1 do
     begin
-    if (StrToInt(num_mul[u]) * 2 < 10) then
+    if (ChrToInt(num_mul[u]) * 2 < 10) then
       begin
+
       if (remem = true) then
         begin
-        num_res:=IntToStr(StrToInt(num_mul[u]) * 2 + 1) + num_res;
-        if (StrToInt(num_mul[u]) * 2 + 1 > 10) then remem:=true else remem:=false;
+        num_res:=IntToChr(ChrToInt(num_mul[u]) * 2 + 1) + num_res;
+        if (ChrToInt(num_mul[u]) * 2 + 1 > 10) then remem:=true else remem:=false;
         end
 
-      else num_res:=IntToStr(StrToInt(num_mul[u]) * 2) + num_res;
+      else num_res:=IntToChr(ChrToInt(num_mul[u]) * 2) + num_res;
       end
 
     else begin
       if (remem = true) then
         begin
-        num_res:=IntToStr(StrToInt(num_mul[u]) * 2 + 1)[2] + num_res;
+        num_res:=IntToChr((ChrToInt(num_mul[u]) * 2 + 1) mod 10) + num_res;
         end
 
       else begin
         remem:=true;
-        num_res:=IntToStr(StrToInt(num_mul[u]) * 2)[2] + num_res;
+        num_res:=IntToChr(ChrToInt(num_mul[u]) * 2 mod 10) + num_res;
         end;
       end;
 
@@ -385,7 +398,7 @@ for i:=1 to sep - 1 do
 
   if (s[i] = '1') then
     begin
-    num_res[length(num_res)]:=IntToStr(StrToInt(num_res[length(num_res)]) + 1)[1];
+    num_res[length(num_res)]:=IntToChr(ChrToInt(num_res[length(num_res)]) + 1);
     end;
 
   num_mul:=num_res;
@@ -434,16 +447,16 @@ repeat
 
   for i:=length(dec_mul) downto 3 do
     begin
-    if (StrToInt(dec_mul[i]) * 2 > 9) then
+    if (ChrToInt(dec_mul[i]) * 2 > 9) then
       begin
       if (remem = true) then
         begin
-        dec_mul[i]:=IntToStr(StrToInt(dec_mul[i]) * 2 + 1)[2];
+        dec_mul[i]:=IntToChr((ChrToInt(dec_mul[i]) * 2 + 1) mod 10);
         end
 
       else begin
         remem:=true;
-        dec_mul[i]:=IntToStr(StrToInt(dec_mul[i]) * 2)[2];
+        dec_mul[i]:=IntToChr((ChrToInt(dec_mul[i]) * 2) mod 10);
         end;
       end
 
@@ -451,11 +464,11 @@ repeat
       if (remem = true) then
         begin
         remem:=false;
-        dec_mul[i]:=IntToStr(StrToInt(dec_mul[i]) * 2 + 1)[1];
+        dec_mul[i]:=IntToChr(ChrToInt(dec_mul[i]) * 2 + 1);
         end
 
       else begin
-        dec_mul[i]:=IntToStr(StrToInt(dec_mul[i]) * 2)[1];
+        dec_mul[i]:=IntToChr(ChrToInt(dec_mul[i]) * 2);
         end;
       end;
     end;
@@ -550,9 +563,9 @@ num_div:=Copy(s, 1, sep - 1); num_res:='';
 repeat
   delete(num_div, pos(' ', num_div), 1);
 
-  if (StrToInt(num_div[length(num_div)]) mod 2 = 1) then
+  if (ChrToInt(num_div[length(num_div)]) mod 2 = 1) then
     begin
-    num_div[length(num_div)]:=IntToStr(StrToInt(num_div[length(num_div)]) - 1)[1];
+    num_div[length(num_div)]:=IntToChr(ChrToInt(num_div[length(num_div)]) - 1);
     num_res:='1' + num_res;
     end
 
@@ -564,16 +577,16 @@ repeat
 
   for i:=1 to length(num_div) do
     begin
-    if (StrToInt(num_div[i]) mod 2 = 1) then
+    if (ChrToInt(num_div[i]) mod 2 = 1) then
       begin
       if (remem = true) then
         begin
-        num_div[i]:=IntToStr((10 + StrToInt(num_div[i])) div 2)[1];
+        num_div[i]:=IntToChr((10 + ChrToInt(num_div[i])) div 2);
         end
 
       else begin
         remem:=true;
-        if (i > 1) or (i = 1) and (num_div[i] <> '1') then num_div[i]:=IntToStr(StrToInt(num_div[i]) div 2)[1]
+        if (i > 1) or (i = 1) and (num_div[i] <> '1') then num_div[i]:=IntToChr(ChrToInt(num_div[i]) div 2)
 
         else num_div[i]:=' ';
         end;
@@ -583,11 +596,11 @@ repeat
       if (remem = true) then
         begin
         remem:=false;
-        num_div[i]:=IntToStr((10 + StrToInt(num_div[i])) div 2)[1];
+        num_div[i]:=IntToChr((10 + ChrToInt(num_div[i])) div 2);
         end
 
       else begin
-        num_div[i]:=IntToStr(StrToInt(num_div[i]) div 2)[1];
+        num_div[i]:=IntToChr(ChrToInt(num_div[i]) div 2);
         end;
       end;
     end;
