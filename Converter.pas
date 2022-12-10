@@ -1,3 +1,5 @@
+{$ASMMODE INTEL}
+
 uses keyboard, process, regexpr, strutils, sysutils, windows;
 
 const Green       = $2;
@@ -11,16 +13,192 @@ var ctrl_c, auto_copy, ask_trunc, show_tip, decimal, negative, remem: boolean;
     pre_pos: coord;
     key: char;
 
-// Thanks @svecon for those 2 genius functions
+//Thanks John O'Harrow from The Fastcode Challenges for this genius function
 
-Function ChrToInt(c: char): longint;
-begin
-ChrToInt:=ord(c) - 48;
+Function CharPos(Ch : Char; const Str : AnsiString) : Longint; nostackframe assembler;
+asm
+  mov       ecx, [edx - 4]
+  push      ebx
+  mov       ebx, eax
+  cmp       ecx, 16
+  jl        @@Small
+
+@@NotSmall:
+  mov       ah, al
+  movd      xmm1, eax
+  pshuflw   xmm1, xmm1, 0
+  pshufd    xmm1, xmm1, 0
+
+@@First16:
+  movups    xmm0, [edx]
+  pcmpeqb   xmm0, xmm1
+  pmovmskb  eax, xmm0
+  test      eax, eax
+  jnz       @@FoundStart
+  cmp       ecx, 32
+  jl        @@Medium
+
+@@Align:
+  sub       ecx, 16
+  push      ecx
+  mov       eax, edx
+  neg       eax
+  and       eax, 15
+  add       edx, ecx
+  neg       ecx
+  add       ecx, eax
+
+@@Loop:
+  movaps    xmm0, [edx + ecx]
+  pcmpeqb   xmm0, xmm1
+  pmovmskb  eax, xmm0
+  test      eax, eax
+  jnz       @@Found
+  add       ecx, 16
+  jle       @@Loop
+  pop       eax
+  add       edx, 16
+  add       eax, ecx
+  jmp       dword ptr [@@JumpTable2 + ecx * 4]
+  nop
+  nop
+
+@@FoundStart:
+  bsf       eax, eax
+  pop       ebx
+  inc       eax
+  ret
+  nop
+  nop
+
+@@Found:
+  pop       edx
+  bsf       eax, eax
+  add       edx, ecx
+  pop       ebx
+  lea       eax, [eax + edx + 1]
+  ret
+
+@@Medium:
+  add       edx, ecx
+  mov       eax, 16
+  jmp       dword ptr [@@JumpTable1 - 64 + ecx * 4]
+  nop
+  nop
+
+@@Small:
+  add       edx, ecx
+  xor       eax, eax
+  jmp       dword ptr [@@JumpTable1 + ecx * 4]
+  nop
+
+@@JumpTable1:
+  dd        @@NotFound, @@01, @@02, @@03, @@04, @@05, @@06, @@07
+  dd        @@08, @@09, @@10, @@11, @@12, @@13, @@14, @@15, @@16
+
+@@JumpTable2:
+  dd        @@16, @@15, @@14, @@13, @@12, @@11, @@10, @@09, @@08
+  dd        @@07, @@06, @@05, @@04, @@03, @@02, @@01, @@NotFound
+
+@@16:
+  add       eax, 1
+  cmp       bl, [edx - 16]
+  je        @@Done
+
+@@15:
+  add       eax, 1
+  cmp       bl, [edx - 15]
+  je        @@Done
+
+@@14:
+  add       eax, 1
+  cmp       bl, [edx - 14]
+  je        @@Done
+
+@@13:
+  add       eax, 1
+  cmp       bl, [edx - 13]
+  je        @@Done
+
+@@12:
+  add       eax, 1
+  cmp       bl, [edx - 12]
+  je        @@Done
+
+@@11:
+  add       eax, 1
+  cmp       bl, [edx - 11]
+  je        @@Done
+
+@@10:
+  add       eax, 1
+  cmp       bl, [edx - 10]
+  je        @@Done
+
+@@09:
+  add       eax, 1
+  cmp       bl, [edx - 9]
+  je        @@Done
+
+@@08:
+  add       eax, 1
+  cmp       bl, [edx - 8]
+  je        @@Done
+
+@@07:
+  add       eax, 1
+  cmp       bl, [edx - 7]
+  je        @@Done
+
+@@06:
+  add       eax, 1
+  cmp       bl, [edx - 6]
+  je        @@Done
+
+@@05:
+  add       eax, 1
+  cmp       bl, [edx - 5]
+  je        @@Done
+
+@@04:
+  add       eax, 1
+  cmp       bl, [edx - 4]
+  je        @@Done
+
+@@03:
+  add       eax, 1
+  cmp       bl, [edx - 3]
+  je        @@Done
+
+@@02:
+  add       eax, 1
+  cmp       bl, [edx - 2]
+  je        @@Done
+
+@@01:
+  add       eax, 1
+  cmp       bl, [edx - 1]
+  je        @@Done
+
+@@NotFound:
+  xor       eax, eax
+  pop       ebx
+  ret
+
+@@Done:
+  pop       ebx
 end;
 
-Function IntToChr(l: longint): char;
-begin
-IntToChr:=chr(l + 48);
+// Both functions below are inspired by @svecon's code
+
+Function ChrToInt(c: char): byte; assembler;
+asm
+sub al, '0'
+end;
+
+Function IntToChr(b: byte): char; assembler;
+asm
+add al, '0'
 end;
 
 Function WhereXY: coord;
@@ -91,7 +269,7 @@ OpenClipboard(0);
   GlobalUnlock(hClipData);
 CloseClipboard;
 
-if (Regex(strpas(StrData), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (pos('.', strpas(strData)) > 0) and (decimal = true) or (pos('-', strpas(strData)) > 0) and ((negative = true) or (length(s) > 0)) then
+if (Regex(strpas(StrData), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (CharPos('.', strpas(strData)) > 0) and (decimal = true) or (CharPos('-', strpas(strData)) > 0) and ((negative = true) or (length(s) > 0)) then
   begin
   pre_pos:=WhereXY;
 
@@ -193,9 +371,9 @@ repeat
 
     write(Copy(input, i + 1, length(input)));
 
-    if (pos('.', input) > 0) then decimal:=true;
+    if (decimal = false) and (CharPos('.', input) > 0) then decimal:=true;
 
-    if (pos('-', input) > 0) then negative:=true;
+    if (negative = false) and (CharPos('-', input) > 0) then negative:=true;
     end;
 
   if (length(input) > 0) then
@@ -246,7 +424,7 @@ repeat
 
       if (check_dec = true) and (check_neg = true) then
         begin
-        if (decimal = true) then sep:=pos('.', input)
+        if (decimal = true) then sep:=CharPos('.', input)
 
         else sep:=length(input) + 1;
         end;
@@ -417,7 +595,7 @@ end;
 
 Procedure Decimal_to_Binary;
 var dec_mul, compare, limit: ansistring;
-    show_loop: boolean;
+    show_loop: boolean = true;
 begin
 if (ask_trunc = true) then
   begin
@@ -434,9 +612,7 @@ if (ask_trunc = true) then
   write('Convert to binary:'#13#10, num_res);
 
   show_loop:=false;
-  end
-
-else show_loop:=true;
+  end;
 
 write('.');
 
@@ -561,7 +737,7 @@ begin
 num_div:=Copy(s, 1, sep - 1); num_res:='';
 
 repeat
-  delete(num_div, pos(' ', num_div), 1);
+  delete(num_div, CharPos(' ', num_div), 1);
 
   if (ChrToInt(num_div[length(num_div)]) mod 2 = 1) then
     begin
@@ -586,9 +762,9 @@ repeat
 
       else begin
         remem:=true;
-        if (i > 1) or (i = 1) and (num_div[i] <> '1') then num_div[i]:=IntToChr(ChrToInt(num_div[i]) div 2)
+        if (i = 1) and (num_div[i] = '1') then num_div[i]:=' '
 
-        else num_div[i]:=' ';
+        else num_div[i]:=IntToChr(ChrToInt(num_div[i]) div 2);
         end;
       end
 
@@ -686,7 +862,7 @@ writeln('  ', dupestring('_', 59), #13#10);
 write('  Press key to choose options or Esc key to Exit: ');
 
 repeat
-  if (key = #8) then
+  if (key = #8) and (s <> '') then
     begin
     if (u = 0) then key:='1' else key:='2';
     end
