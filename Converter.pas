@@ -690,44 +690,31 @@ end;
 
 //============================ Integer to Binary ============================//
 
-Procedure Integer_to_Binary;
-var num_div: ansistring;
+Procedure Integer_to_Binary(num_div: ansistring);
+
+const Even: array[0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
+      Odd : array[0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
 begin
-num_div:=Copy(s, 1, sep - 1); num_res:='';
+num_res:='';
 
 repeat
-  delete(num_div, CharPos(' ', num_div), 1);
+  num_res:=IntToChr(ChrToInt(num_div[length(num_div)]) mod 2) + num_res;
 
-  if (ChrToInt(num_div[length(num_div)]) mod 2 = 1) then
+  num_div:='0' + num_div;
+
+  for i:=length(num_div) downto 2 do
     begin
-    num_div[length(num_div)]:=IntToChr(ChrToInt(num_div[length(num_div)]) - 1);
-    num_res:='1' + num_res;
-    end
-
-  else begin
-    num_res:='0' + num_res;
-    end;
-
-  remem:=0;
-
-  for i:=1 to length(num_div) do
-    begin
-    if (ChrToInt(num_div[i]) mod 2 = 1) then
-      begin
-      if (i = 1) and (num_div[i] = '1') then num_div[i]:=' '
-
-      else num_div[i]:=IntToChr((remem + ChrToInt(num_div[i])) div 2);
-
-      remem:=10;
-      end
+    if (ChrToInt(num_div[i - 1]) mod 2 = 1) then num_div[i]:=Odd[ChrToInt(num_div[i])]
 
     else begin
-      num_div[i]:=IntToChr((remem + ChrToInt(num_div[i])) div 2);
+      if (i = 2) and (num_div[i] in ['0', '1']) then delete(num_div, 1, 1)
 
-      remem:=0;
+      else num_div[i]:=Even[ChrToInt(num_div[i])];
       end;
     end;
-until (num_div = '0');
+
+  delete(num_div, 1, 1);
+until (num_div = '');
 
 if (negative = true) then num_res:='-' + num_res;
 
@@ -828,7 +815,7 @@ repeat
 
          writeln(#13#10#13#10'Convert to binary: ');
 
-         Integer_to_Binary;
+         Integer_to_Binary(Copy(s, 1, sep - 1));
 
          End_screen;
          end;
