@@ -2,7 +2,9 @@
 
 uses keyboard, process, regexpr, strutils, sysutils, windows;
 
-const Green       = $2;
+const Even_table: array[0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
+      Odd_table : array[0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
+      Green       = $2;
       LightYellow = $E;
       Red         = $4;
       White       = $7;
@@ -14,9 +16,11 @@ var ctrl_c, auto_copy, ask_trunc, show_tip, decimal, negative: boolean;
     remem: byte;
     key: char;
 
-//Thanks John O'Harrow from The Fastcode Challenges for this genius function
+//=========================== Optimized functions ===========================//
 
-Function CharPos(Ch : Char; const Str : AnsiString) : Longint; nostackframe assembler;
+//Credit to John O'Harrow from The Fastcode Challenges
+
+Function CharPos(ch: char; str: ansistring): longint; nostackframe assembler;
 asm
   mov       ecx, [edx - 4]
   push      ebx
@@ -190,7 +194,7 @@ asm
   pop       ebx
 end;
 
-// Both functions below are inspired by @svecon's code
+//Both functions below are inspired by @svecon's code
 
 Function ChrToInt(c: char): byte; assembler;
 asm
@@ -201,6 +205,8 @@ Function IntToChr(b: byte): char; assembler;
 asm
 add al, '0'
 end;
+
+//====================== Alternative functions for Crt ======================//
 
 Function WhereXY: coord;
 var cursor_pos: TConsoleScreenBufferInfo;
@@ -248,6 +254,8 @@ pos.y:=start_y;
 FillConsoleOutputCharacter(GetStdHandle(STD_OUTPUT_HANDLE), ' ', area, pos, &dwNumWritten);
 GotoXY(end_x, end_y);
 end;
+
+//=========================== Utilities functions ===========================//
 
 Function Regex(str_match, reg: ansistring): boolean;
 var expr: TRegExpr;
@@ -437,82 +445,58 @@ end;
 //============================ Binary to Decimal ============================//
 
 Procedure Binary_to_Decimal;
-var dividend, div_res, dec_sum: ansistring;
+var div_res, dec_sum: ansistring;
 begin
-div_res:='1.0'; dec_sum:='0.0'; dec_res:='';
+div_res:='5'; dec_res:='';
 
 for i:=sep + 1 to length(s) do
   begin
-  u:=0;
-  remem:=0;
-  dividend:=div_res; div_res:='';
-
-  repeat
-    inc(u);
-
-    if (dividend[u] = '.') then div_res:=div_res + '.'
-
-    else if (ChrToInt(dividend[u]) mod 2 = 1) then
-      begin
-      div_res:=div_res + IntToChr((remem + ChrToInt(dividend[u])) div 2);
-
-      if ((remem + ChrToInt(dividend[u])) mod 2 = 1) then
-        begin
-        if (u = length(dividend)) then dividend:=dividend + '0';
-
-        remem:=10;
-        end
-
-      else remem:=0;
-      end
-
-    else begin
-      div_res:=div_res + IntToChr((remem + ChrToInt(dividend[u])) div 2);
-
-      remem:=0;
-      end;
-  until (u = length(dividend));
-
-  if (s[i] <> '0') then
+  if s[i] = '1' then
     begin
     remem:=0;
-    dec_sum:=dec_sum + dupestring('0', length(div_res) - length(dec_sum)); dec_res:='';
+    dec_sum:=dec_res + dupestring('0', length(div_res) - length(dec_sum)); dec_res:='';
 
-    for u:=length(dec_sum) downto 2 do
+    for u:=length(dec_sum) downto 1 do
       begin
-      if (div_res[u] <> '.') and (dec_sum[u] <> '.') then
+      if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) < 10) then
         begin
-        if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) < 10) then
+        if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem = 10) then
           begin
-          if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem = 10) then
-            begin
-            dec_res:='0' + dec_res;
+          dec_res:='0' + dec_res;
 
-            remem:=1;
-            end
-
-          else begin
-            dec_res:=IntToChr(ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem) + dec_res;
-
-            remem:=0;
-            end;
+          remem:=1;
           end
 
         else begin
-          dec_res:=IntToChr((ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem) mod 10) + dec_res;
+          dec_res:=IntToChr(ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem) + dec_res;
 
-          remem:=1;
+          remem:=0;
           end;
         end
 
-      else dec_res:='.' + dec_res;
-      end;
+      else begin
+        dec_res:=IntToChr((ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem) mod 10) + dec_res;
 
-    dec_sum:='0' + dec_res;
+        remem:=1;
+        end;
+      end;
     end;
+
+  div_res:='0' + div_res + '0';
+
+  for u:=length(div_res) downto 2 do
+    begin
+    if ChrToInt(div_res[u - 1]) mod 2 = 1 then div_res[u]:=Odd_table[ChrToInt(div_res[u])]
+
+    else div_res[u]:=Even_table[ChrToInt(div_res[u])];
+    end;
+
+  delete(div_res, 1, 1);
   end;
 
-write(dec_res);
+dec_res:='.' + dec_res;
+
+write(dec_res)
 end;
 
 //============================ Binary to Integer ============================//
@@ -691,9 +675,6 @@ end;
 //============================ Integer to Binary ============================//
 
 Procedure Integer_to_Binary(num_div: ansistring);
-
-const Even: array[0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
-      Odd : array[0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
 begin
 num_res:='';
 
@@ -704,16 +685,12 @@ repeat
 
   for i:=length(num_div) downto 2 do
     begin
-    if (ChrToInt(num_div[i - 1]) mod 2 = 1) then num_div[i]:=Odd[ChrToInt(num_div[i])]
+    if ChrToInt(num_div[i - 1]) mod 2 = 1 then num_div[i]:=Odd_table[ChrToInt(num_div[i])]
 
-    else begin
-      if (i = 2) and (num_div[i] in ['0', '1']) then delete(num_div, 1, 1)
-
-      else num_div[i]:=Even[ChrToInt(num_div[i])];
-      end;
+    else num_div[i]:=Even_table[ChrToInt(num_div[i])];
     end;
 
-  delete(num_div, 1, 1);
+  if (num_div[2] = '0') then delete(num_div, 1, 2) else delete(num_div, 1, 1);
 until (num_div = '');
 
 if (negative = true) then num_res:='-' + num_res;
