@@ -2,8 +2,10 @@
 
 uses keyboard, process, regexpr, strutils, sysutils, windows;
 
-const Even_table: array[0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
-      Odd_table : array[0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
+const Div_even  : array[0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
+      Div_odd   : array[0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
+      Mul_small : array[0..9] of char = ('0', '2', '4', '6', '8', '0', '2', '4', '6', '8');
+      Mul_big   : array[0..9] of char = ('1', '3', '5', '7', '9', '1', '3', '5', '7', '9');
       Green       = $2;
       LightYellow = $E;
       Red         = $4;
@@ -22,6 +24,8 @@ var ctrl_c, auto_copy, ask_trunc, show_tip, decimal, negative: boolean;
 
 Function CharPos(ch: char; str: ansistring): longint; nostackframe assembler;
 asm
+  test      edx, edx
+  jz        @@NullString
   mov       ecx, [edx - 4]
   push      ebx
   mov       ebx, eax
@@ -66,6 +70,11 @@ asm
   add       eax, ecx
   jmp       dword ptr [@@JumpTable2 + ecx * 4]
   nop
+  nop
+
+@@NullString:
+  xor       eax, eax
+  ret
   nop
 
 @@FoundStart:
@@ -268,6 +277,16 @@ if (expr.Exec(str_match)) then Regex:=true else Regex:=false;
 expr.Free;
 end;
 
+Function RPosSet(const CharSet: TSysCharSet; const str: ansistring): longint;
+begin
+for RPosSet:=length(str) downto 1 do
+  begin
+  if str[RPosSet] in CharSet then exit;
+  end;
+
+RPosSet:=0;
+end;
+
 Function PasteFromClip: ansistring;
 var hClipData: handle;
     StrData: pchar;
@@ -350,7 +369,7 @@ end;
 
 //============================ Input check ============================//
 
-Function Input(check_dec, check_neg: boolean; char_check: array of ansistring): ansistring;
+Function Input(check_dec, check_neg: boolean; CharSet: TSysCharSet): ansistring;
 begin
 input:='';
 
@@ -362,7 +381,7 @@ if (check_dec = true) and (check_neg = true) then
 repeat
   key:=readkey;
                                                  //===== Prevent Ctrl + V from being treated as normal input =====//
-  if (AnsiMatchText(key, char_check) = true) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (check_neg = true) and (length(input) = 0) and (key = '-') or (check_dec = true) and (decimal = false) and (key = '.') then
+  if (key in CharSet) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (check_neg = true) and (length(input) = 0) and (key = '-') or (check_dec = true) and (decimal = false) and (key = '.') then
     begin
     if (key = '-') then negative:=true;
 
@@ -419,7 +438,7 @@ repeat
           if (input[length(input)] = '.') then decimal:=false;
 
           delete(input, length(input), 1);
-        until (AnsiMatchText(input[length(input)], char_check) = true) or (decimal = false);
+        until (input[length(input)] in CharSet) or (decimal = false);
         end;
 
       if (length(input) > 1) and (input[1] in ['0', '.']) then
@@ -428,7 +447,7 @@ repeat
           if (input[1] = '.') then input:='0' + input
 
           else delete(input, 1, 1);
-        until (AnsiMatchText(input[1], char_check) = true) or (input[2] = '.') or (input = '0');
+        until (input[1] in CharSet) or (input[2] = '.') or (input = '0');
         end;
 
       if (check_dec = true) and (check_neg = true) then
@@ -486,9 +505,9 @@ for i:=sep + 1 to length(s) do
 
   for u:=length(div_res) downto 2 do
     begin
-    if ChrToInt(div_res[u - 1]) mod 2 = 1 then div_res[u]:=Odd_table[ChrToInt(div_res[u])]
+    if (div_res[u - 1] in ['1', '3', '5', '7', '9'])  then div_res[u]:=Div_odd[ChrToInt(div_res[u])]
 
-    else div_res[u]:=Even_table[ChrToInt(div_res[u])];
+    else div_res[u]:=Div_even[ChrToInt(div_res[u])];
     end;
 
   delete(div_res, 1, 1);
@@ -542,7 +561,35 @@ if (negative = true) then num_res:='-' + num_res;
 
 write(num_res);
 
+dec_res:='';
+
 if (decimal = true) then Binary_to_Decimal;
+end;
+
+//============================ Integer to Binary ============================//
+
+Function Integer_to_Binary(num_div: ansistring): ansistring;
+begin
+num_res:='';
+
+repeat
+  num_res:=IntToChr(ChrToInt(num_div[length(num_div)]) mod 2) + num_res;
+
+  num_div:='0' + num_div;
+
+  for i:=length(num_div) downto 2 do
+    begin
+    if (num_div[i - 1] in ['1', '3', '5', '7', '9']) then num_div[i]:=Div_odd[ChrToInt(num_div[i])]
+
+    else num_div[i]:=Div_even[ChrToInt(num_div[i])];
+    end;
+
+  delete(num_div, 1, WordPosition(1, num_div, ['0']) - 1);
+until (num_div = '00');
+
+if (negative = true) then num_res:='-' + num_res;
+
+Integer_to_Binary:=num_res;
 end;
 
 //============================ Decimal to Binary ============================//
@@ -550,6 +597,7 @@ end;
 Procedure Decimal_to_Binary;
 var dec_mul, compare, limit: ansistring;
     show_loop: boolean = true;
+    split: cardinal;
 begin
 if (ask_trunc = true) then
   begin
@@ -570,36 +618,22 @@ if (ask_trunc = true) then
 
 write('.');
 
-remem:=0;
-dec_mul:='0' + Copy(s, sep, length(s)); dec_res:='.';
+dec_mul:=Copy(s, sep + 1, length(s)); dec_res:='.';
+split:=length(dec_mul) - pos('1', ReverseString(Integer_to_Binary(dec_mul))) + 1;
 
 repeat
-  remem:=0;
-
-  for i:=length(dec_mul) downto 3 do
+  if (show_loop = true) then
     begin
-    if (ChrToInt(dec_mul[i]) * 2 > 9) then
+    if (length(dec_res) - 1 = split) then
       begin
-      dec_mul[i]:=IntToChr((ChrToInt(dec_mul[i]) * 2 + remem) mod 10);
-
-      remem:=1;
+      TextColor(Green);
+      compare:=dec_mul;
       end
 
-    else begin
-      dec_mul[i]:=IntToChr(ChrToInt(dec_mul[i]) * 2 + remem);
-
-      remem:=0;
-      end;
+    else if (compare = dec_mul) then break;
     end;
 
-  if (dec_mul[length(dec_mul)] = '0') then
-    begin
-    repeat
-      delete(dec_mul, length(dec_mul), 1);
-    until (dec_mul[length(dec_mul)] in ['1'..'9']) or (dec_mul = '0');
-    end;
-
-  if (remem = 1) then
+  if (dec_mul[1] in ['5'..'9']) then
     begin
     write('1');
     dec_res:=dec_res + '1';
@@ -610,16 +644,16 @@ repeat
     dec_res:=dec_res + '0';
     end;
 
-  if (show_loop = true) then
-    begin
-    if (length(dec_res) - 1 = length(s) - sep) then
-      begin
-      TextColor(Green);
-      compare:=dec_mul;
-      end
+  dec_mul:=dec_mul + '0';
 
-    else if (compare = dec_mul) then break;
+  for i:=1 to length(dec_mul) - 1 do
+    begin
+    if (dec_mul[i + 1] in ['5'..'9']) then dec_mul[i]:=Mul_big[ChrToInt(dec_mul[i])]
+
+    else dec_mul[i]:=Mul_small[ChrToInt(dec_mul[i])];
     end;
+
+  delete(dec_mul, RPosSet(['1'..'9'], dec_mul) + 1, length(dec_mul));
 
   if (GetAsyncKeyState(27) < 0) then
     begin
@@ -658,9 +692,9 @@ repeat
         end
     until (key <> '');
     end;
-until (dec_mul = '0') or (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit);
+until (dec_mul = '') or (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit);
 
-if (show_loop = true) and (dec_mul <> '0') then
+if (show_loop = true) and (dec_mul <> '') then
   begin
   writeln(TextColor(White), '...');
 
@@ -670,34 +704,6 @@ if (show_loop = true) and (dec_mul <> '0') then
 
   write(TextColor(White), 'is the forever loop part');
   end;
-end;
-
-//============================ Integer to Binary ============================//
-
-Procedure Integer_to_Binary(num_div: ansistring);
-begin
-num_res:='';
-
-repeat
-  num_res:=IntToChr(ChrToInt(num_div[length(num_div)]) mod 2) + num_res;
-
-  num_div:='0' + num_div;
-
-  for i:=length(num_div) downto 2 do
-    begin
-    if ChrToInt(num_div[i - 1]) mod 2 = 1 then num_div[i]:=Odd_table[ChrToInt(num_div[i])]
-
-    else num_div[i]:=Even_table[ChrToInt(num_div[i])];
-    end;
-
-  if (num_div[2] = '0') then delete(num_div, 1, 2) else delete(num_div, 1, 1);
-until (num_div = '');
-
-if (negative = true) then num_res:='-' + num_res;
-
-write(num_res);
-
-if (decimal = true) then Decimal_to_Binary;
 end;
 
 //============================ User interface ============================//
@@ -788,11 +794,15 @@ repeat
 
          write(TextColor(White), 'Enter decimal to convert: ');
 
-         s:=Input(true, true, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+         s:=Input(true, true, ['0'..'9']);
 
          writeln(#13#10#13#10'Convert to binary: ');
 
-         Integer_to_Binary(Copy(s, 1, sep - 1));
+         write(Integer_to_Binary(Copy(s, 1, sep - 1)));
+
+         dec_res:='';
+
+         if (decimal = true) then Decimal_to_Binary;
 
          End_screen;
          end;
