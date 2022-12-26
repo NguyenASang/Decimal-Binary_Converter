@@ -6,10 +6,10 @@ const Div_even  : array[0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3',
       Div_odd   : array[0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
       Mul_small : array[0..9] of char = ('0', '2', '4', '6', '8', '0', '2', '4', '6', '8');
       Mul_big   : array[0..9] of char = ('1', '3', '5', '7', '9', '1', '3', '5', '7', '9');
-      Green       = $2;
-      LightYellow = $E;
-      Red         = $4;
-      White       = $7;
+      Green     = $2;
+      Yellow    = $E;
+      Red       = $4;
+      White     = $7;
 
 var ctrl_c, auto_copy, ask_trunc, show_tip, decimal, negative: boolean;
     s, num_res, dec_res: ansistring;
@@ -232,7 +232,7 @@ cursor_pos.y:=y;
 SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor_pos);
 end;
 
-Function TextColor(Color: byte): ansistring;
+Function TextColor(Color: byte): string;
 begin
 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Color);
 TextColor:='';
@@ -277,7 +277,7 @@ if (expr.Exec(str_match)) then Regex:=true else Regex:=false;
 expr.Free;
 end;
 
-Function RPosSet(const CharSet: TSysCharSet; const str: ansistring): longint;
+Function RPosSet(const CharSet: TSysCharSet; const str: ansistring): cardinal;
 begin
 for RPosSet:=length(str) downto 1 do
   begin
@@ -352,7 +352,7 @@ else begin
 
 write(TextColor(Green), 'Status: ');
 
-write(TextColor(LightYellow), 'Copied');
+write(TextColor(Yellow), 'Copied');
 end;
 
 Function HandlerRoutine(dwCtrlType: DWORD): WINBOOL; stdcall;
@@ -693,7 +693,7 @@ ctrl_c:=true;
 
 if (show_tip = true) then
   begin
-  write(TextColor(LightYellow), #13#10#13#10'Tip: ');
+  write(TextColor(Yellow), #13#10#13#10'Tip: ');
 
   write(TextColor(White), 'You can copy the result by pressing Ctrl + C');
   end;
@@ -860,7 +860,7 @@ repeat
 
              Clear(WhereXY.x, WhereXY.y, ScreenXY.x, WhereXY.x, WhereXY.y);
 
-             write(TextColor(LightYellow), 'Tip: ');
+             write(TextColor(Yellow), 'Tip: ');
 
              write(TextColor(White), 'To get good accuracy for your result, I recommend choosing at least 20 digits');
 
@@ -880,7 +880,7 @@ repeat
              begin
              GotoXY(2, WhereXY.y + 16);
 
-             write(TextColor(LightYellow), 'Tip: ');
+             write(TextColor(Yellow), 'Tip: ');
 
              write(TextColor(White), 'Some decimals may take a long time to display as binary, you can always pause the converter by pressing ESC key');
 
