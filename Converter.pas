@@ -22,7 +22,7 @@ var ctrl_c, auto_copy, ask_trunc, show_tip, decimal, negative: boolean;
 
 //Credit to John O'Harrow from The Fastcode Challenges
 
-Function CharPos(ch: char; str: ansistring): longint; nostackframe assembler;
+Function CharPos(ch: char; str: ansistring): cardinal; nostackframe assembler;
 asm
   test      edx, edx
   jz        @@NullString
@@ -224,7 +224,7 @@ GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), cursor_pos);
 WhereXY:=cursor_pos.dwCursorPosition;
 end;
 
-Procedure GoToXY(x, y: longint);
+Procedure GoToXY(x, y: cardinal);
 var cursor_pos: coord;
 begin
 cursor_pos.x:=x;
@@ -254,7 +254,7 @@ GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), ScreenSize);
 ScreenXY:=ScreenSize.dwSize;
 end;
 
-Procedure Clear(start_x, start_y, area, end_x, end_y: longint);
+Procedure Clear(start_x, start_y, area, end_x, end_y: cardinal);
 var dwNumWritten: dword;
     pos: coord;
 begin
@@ -281,7 +281,7 @@ Function RPosSet(const CharSet: TSysCharSet; const str: ansistring): longint;
 begin
 for RPosSet:=length(str) downto 1 do
   begin
-  if str[RPosSet] in CharSet then exit;
+  if (str[RPosSet] in CharSet) then exit;
   end;
 
 RPosSet:=0;
@@ -380,7 +380,7 @@ if (check_dec = true) and (check_neg = true) then
 
 repeat
   key:=readkey;
-                                                 //===== Prevent Ctrl + V from being treated as normal input =====//
+                          //===== Prevent Ctrl + V from being treated as normal input =====//
   if (key in CharSet) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (check_neg = true) and (length(input) = 0) and (key = '-') or (check_dec = true) and (decimal = false) and (key = '.') then
     begin
     if (key = '-') then negative:=true;
@@ -461,6 +461,33 @@ repeat
 until (length(input) > 0) and (key = #13);
 end;
 
+//============================ Binary to Integer ============================//
+
+Function Binary_to_Integer: ansistring;
+begin
+if (s = '0') then num_res:='0' else num_res:='10';
+
+for i:=2 to sep - 1 do
+  begin
+  if (num_res[1] in ['5'..'9']) then num_res:='0' + num_res;
+
+  for u:=1 to length(num_res) - 1 do
+    begin
+    if (num_res[u + 1] in ['5'..'9']) then num_res[u]:=Mul_big[ChrToInt(num_res[u])]
+
+    else num_res[u]:=Mul_small[ChrToInt(num_res[u])];
+    end;
+
+  num_res[length(num_res) - 1]:=IntToChr(ChrToInt(num_res[length(num_res) - 1]) + ChrToInt(s[i]));
+  end;
+
+delete(num_res, length(num_res), 1);
+
+if (negative = true) then num_res:='-' + num_res;
+
+Binary_to_Integer:=num_res;
+end;
+
 //============================ Binary to Decimal ============================//
 
 Procedure Binary_to_Decimal;
@@ -470,7 +497,7 @@ div_res:='5'; dec_res:='';
 
 for i:=sep + 1 to length(s) do
   begin
-  if s[i] = '1' then
+  if (s[i] = '1') then
     begin
     remem:=0;
     dec_sum:=dec_res + dupestring('0', length(div_res) - length(dec_sum)); dec_res:='';
@@ -516,54 +543,6 @@ for i:=sep + 1 to length(s) do
 dec_res:='.' + dec_res;
 
 write(dec_res)
-end;
-
-//============================ Binary to Integer ============================//
-
-Procedure Binary_to_Integer;
-var num_mul: ansistring;
-begin
-num_mul:='0'; num_res:='';
-
-for i:=1 to sep - 1 do
-  begin
-  remem:=0;
-
-  for u:=length(num_mul) downto 1 do
-    begin
-    if (ChrToInt(num_mul[u]) * 2 < 10) then
-      begin
-      num_res:=IntToChr(ChrToInt(num_mul[u]) * 2 + remem) + num_res;
-
-      if (ChrToInt(num_mul[u]) * 2 + remem > 10) then remem:=1 else remem:=0;
-      end
-
-    else begin
-      num_res:=IntToChr((ChrToInt(num_mul[u]) * 2 + remem) mod 10) + num_res;
-
-      remem:=1;
-      end;
-
-    if (u = 1) and (remem = 1) then num_res:='1' + num_res;
-    end;
-
-  if (s[i] = '1') then
-    begin
-    num_res[length(num_res)]:=IntToChr(ChrToInt(num_res[length(num_res)]) + 1);
-    end;
-
-  num_mul:=num_res;
-
-  if (i < sep - 1) then num_res:='';
-  end;
-
-if (negative = true) then num_res:='-' + num_res;
-
-write(num_res);
-
-dec_res:='';
-
-if (decimal = true) then Binary_to_Decimal;
 end;
 
 //============================ Integer to Binary ============================//
@@ -619,18 +598,18 @@ if (ask_trunc = true) then
 write('.');
 
 dec_mul:=Copy(s, sep + 1, length(s)); dec_res:='.';
-split:=length(dec_mul) - pos('1', ReverseString(Integer_to_Binary(dec_mul))) + 1;
+split:=length(dec_mul) - CharPos('1', ReverseString(Integer_to_Binary(dec_mul))) + 1;
 
 repeat
   if (show_loop = true) then
     begin
+    if (compare = dec_mul) then break;
+
     if (length(dec_res) - 1 = split) then
       begin
       TextColor(Green);
       compare:=dec_mul;
-      end
-
-    else if (compare = dec_mul) then break;
+      end;
     end;
 
   if (dec_mul[1] in ['5'..'9']) then
@@ -816,7 +795,11 @@ repeat
 
          writeln(#13#10#13#10'Convert to decimal: ');
 
-         Binary_to_Integer;
+         write(Binary_to_Integer);
+
+         dec_res:='';
+
+         if (decimal = true) then Binary_to_Decimal;
 
          End_screen;
          end;
