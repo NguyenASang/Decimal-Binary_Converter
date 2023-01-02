@@ -277,7 +277,7 @@ if (expr.Exec(str_match)) then Regex:=true else Regex:=false;
 expr.Free;
 end;
 
-Function RPosSet(const CharSet: TSysCharSet; const str: ansistring): cardinal;
+Function RPosSet(CharSet: TSysCharSet; str: ansistring): cardinal;
 begin
 for RPosSet:=length(str) downto 1 do
   begin
@@ -463,7 +463,7 @@ end;
 
 //============================ Binary to Integer ============================//
 
-Function Binary_to_Integer: ansistring;
+Function BinToInt: ansistring;
 begin
 if (s = '0') then num_res:='0' else num_res:='10';
 
@@ -485,12 +485,12 @@ delete(num_res, length(num_res), 1);
 
 if (negative = true) then num_res:='-' + num_res;
 
-Binary_to_Integer:=num_res;
+BinToInt:=num_res;
 end;
 
 //============================ Binary to Decimal ============================//
 
-Procedure Binary_to_Decimal;
+Procedure BinToDec;
 var div_res, dec_sum: ansistring;
 begin
 div_res:='5'; dec_res:='';
@@ -547,14 +547,12 @@ end;
 
 //============================ Integer to Binary ============================//
 
-Function Integer_to_Binary(num_div: ansistring): ansistring;
+Function IntToBin(num_div: ansistring): ansistring;
 begin
-num_res:='';
+num_div:='0' + num_div; num_res:='';
 
 repeat
   num_res:=IntToChr(ChrToInt(num_div[length(num_div)]) mod 2) + num_res;
-
-  num_div:='0' + num_div;
 
   for i:=length(num_div) downto 2 do
     begin
@@ -563,17 +561,17 @@ repeat
     else num_div[i]:=Div_even[ChrToInt(num_div[i])];
     end;
 
-  delete(num_div, 1, WordPosition(1, num_div, ['0']) - 1);
-until (num_div = '00');
+  if (num_div[2] = '0') then delete(num_div, 1, 1);
+until (num_div = '0');
 
 if (negative = true) then num_res:='-' + num_res;
 
-Integer_to_Binary:=num_res;
+IntToBin:=num_res;
 end;
 
 //============================ Decimal to Binary ============================//
 
-Procedure Decimal_to_Binary;
+Procedure DecToBin;
 var dec_mul, compare, limit: ansistring;
     show_loop: boolean = true;
     split: cardinal;
@@ -586,7 +584,7 @@ if (ask_trunc = true) then
 
   writeln('How many digits do you want to display ?');
 
-  limit:=Input(false, false, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+  limit:=Input(false, false, ['0'..'9']);
 
   clear(0, pre_pos.y, ScreenXY.x * (ScreenXY.y - pre_pos.y), 0, pre_pos.y);
 
@@ -598,7 +596,7 @@ if (ask_trunc = true) then
 write('.');
 
 dec_mul:=Copy(s, sep + 1, length(s)); dec_res:='.';
-split:=length(dec_mul) - CharPos('1', ReverseString(Integer_to_Binary(dec_mul))) + 1;
+split:=length(dec_mul) - CharPos('1', ReverseString(IntToBin(dec_mul))) + 1;
 
 repeat
   if (show_loop = true) then
@@ -777,11 +775,11 @@ repeat
 
          writeln(#13#10#13#10'Convert to binary: ');
 
-         write(Integer_to_Binary(Copy(s, 1, sep - 1)));
+         write(IntToBin(Copy(s, 1, sep - 1)));
 
          dec_res:='';
 
-         if (decimal = true) then Decimal_to_Binary;
+         if (decimal = true) then DecToBin;
 
          End_screen;
          end;
@@ -795,11 +793,11 @@ repeat
 
          writeln(#13#10#13#10'Convert to decimal: ');
 
-         write(Binary_to_Integer);
+         write(BinToInt);
 
          dec_res:='';
 
-         if (decimal = true) then Binary_to_Decimal;
+         if (decimal = true) then BinToDec;
 
          End_screen;
          end;
