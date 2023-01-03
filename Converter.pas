@@ -2,10 +2,10 @@
 
 uses keyboard, process, regexpr, strutils, sysutils, windows;
 
-const Div_even  : array[0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
-      Div_odd   : array[0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
-      Mul_small : array[0..9] of char = ('0', '2', '4', '6', '8', '0', '2', '4', '6', '8');
-      Mul_big   : array[0..9] of char = ('1', '3', '5', '7', '9', '1', '3', '5', '7', '9');
+const Div_even  : array [0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
+      Div_odd   : array [0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
+      Mul_small : array [0..9] of char = ('0', '2', '4', '6', '8', '0', '2', '4', '6', '8');
+      Mul_big   : array [0..9] of char = ('1', '3', '5', '7', '9', '1', '3', '5', '7', '9');
       Green     = $2;
       Yellow    = $E;
       Red       = $4;
@@ -15,7 +15,6 @@ var ctrl_c, auto_copy, ask_trunc, show_tip, decimal, negative: boolean;
     s, num_res, dec_res: ansistring;
     i, u, sep: cardinal;
     pre_pos: coord;
-    remem: byte;
     key: char;
 
 //=========================== Optimized functions ===========================//
@@ -465,9 +464,9 @@ end;
 
 Function BinToInt: ansistring;
 begin
-if (s = '0') then num_res:='0' else num_res:='10';
+num_res:='00';
 
-for i:=2 to sep - 1 do
+for i:=1 to sep - 1 do
   begin
   if (num_res[1] in ['5'..'9']) then num_res:='0' + num_res;
 
@@ -478,7 +477,7 @@ for i:=2 to sep - 1 do
     else num_res[u]:=Mul_small[ChrToInt(num_res[u])];
     end;
 
-  num_res[length(num_res) - 1]:=IntToChr(ChrToInt(num_res[length(num_res) - 1]) + ChrToInt(s[i]));
+  num_res[u]:=IntToChr(ChrToInt(num_res[u]) + ChrToInt(s[i]));
   end;
 
 delete(num_res, length(num_res), 1);
@@ -492,8 +491,9 @@ end;
 
 Procedure BinToDec;
 var div_res, dec_sum: ansistring;
+    remem: byte;
 begin
-div_res:='5'; dec_res:='';
+div_res:='5';
 
 for i:=sep + 1 to length(s) do
   begin
@@ -504,25 +504,14 @@ for i:=sep + 1 to length(s) do
 
     for u:=length(dec_sum) downto 1 do
       begin
-      if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) < 10) then
+      if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem < 10) then
         begin
-        if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem = 10) then
-          begin
-          dec_res:='0' + dec_res;
-
-          remem:=1;
-          end
-
-        else begin
-          dec_res:=IntToChr(ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem) + dec_res;
-
-          remem:=0;
-          end;
+        dec_res:=IntToChr(ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem) + dec_res;
+        remem:=0;
         end
 
       else begin
         dec_res:=IntToChr((ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem) mod 10) + dec_res;
-
         remem:=1;
         end;
       end;
