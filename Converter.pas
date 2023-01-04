@@ -730,12 +730,6 @@ if (auto_copy = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]
 write(TextColor(White), '  [5] Ask for truncating (Decimal to Binary)            ');
 if (ask_trunc = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]');
 
-writeln(TextColor(White), '  ', dupestring('_', 59), #13#10);
-
-writeln('      Other options:'#13#10);
-
-writeln('  [I] What is the forever loop part (Decimal to Binary) ?');
-
 writeln('  ', dupestring('_', 59), #13#10);
 
 write('  Press key to choose options or Esc key to Exit: ');
@@ -877,9 +871,7 @@ repeat
            else GotoXY(WhereXY.x - 11, WhereXY.y + 8);
            end;
          end;
-
-    'i': ShellExecute(HInstance, 'open', PChar('https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-'), nil, nil, SW_NORMAL);
-
+         
     #27: halt;
   end;
 until (key = #27);
