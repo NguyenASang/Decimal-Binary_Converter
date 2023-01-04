@@ -1,5 +1,5 @@
 ## About
-A high precision Decimal/Binary converter written in Free Pascal
+A high precision Decimal/Binary converter written in [***Pascal language***](https://en.wikipedia.org/wiki/Pascal_(programming_language))
 
 ## Features
 - User - friendly interface
@@ -9,18 +9,18 @@ A high precision Decimal/Binary converter written in Free Pascal
 
 ## Compatibility
 
-|       OS      |     Status     |
-| ------------- | -------------  |
-| Window 11     | Working        |
-| Window 10     | Working        |
-| Window 7      | Not tested yet |
+|     OS     |     Status     |
+| ---------- | -------------- |
+| Windows 11 | Working        |
+| Windows 10 | Working        |
+| Windows 7  | Not tested yet |
 
 ## Usage
 ### Normal user
-You can download latest version [here](https://github.com/NguyenASang/Decimal-Binary_Converter/releases)
+You can download latest version [**here**](https://github.com/NguyenASang/Decimal-Binary_Converter/releases)
 
 ### Developer
-- Download and install [Free Pascal (FPC)](https://www.freepascal.org/download.html)
+- Download and install [**Free Pascal (FPC)**](https://www.freepascal.org/download.html)
 - Clone this repo 
 ```sh
 git clone https://github.com/NguyenASang/Decimal-Binary_Converter.git
