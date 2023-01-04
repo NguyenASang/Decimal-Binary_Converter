@@ -4,7 +4,7 @@ A high precision Decimal/Binary converter written in Free Pascal
 ## Features
 - User - friendly interface
 - ***Unlimited*** input, ***quick*** calculation and ***high*** precision 
-- Highlight the [*loop section*](https://github.com/NguyenASang/Decimal-Binary_Converter/wiki#what-is-the-part-that-loops-forever-when-converting-decimal-to-binary-) for special cases when converting to binary
+- Highlight the ***repeating part*** for special cases when converting to binary
 - Automatically remove unnecessary parts in output and input (Eg: 0001.100 &#8594; 1.1)
 
 ## Compatibility
@@ -25,4 +25,4 @@ You can download latest version [here](https://github.com/NguyenASang/Decimal-Bi
 ```sh
 git clone https://github.com/NguyenASang/Decimal-Binary_Converter.git
 ```
-- Run FPC and open the .pas files you cloned
+- Run FPC and open the cloned .pas file.
