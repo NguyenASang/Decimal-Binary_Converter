@@ -21,7 +21,7 @@ var ctrl_c, auto_copy, ask_trunc, show_tip, decimal, negative: boolean;
 
 //Credit to John O'Harrow from The Fastcode Challenges
 
-Function CharPos(ch: char; str: ansistring): cardinal; nostackframe assembler;
+Function ChrPos(ch: char; str: ansistring): cardinal; nostackframe assembler;
 asm
   test      edx, edx
   jz        @@NullString
@@ -296,7 +296,7 @@ OpenClipboard(0);
   GlobalUnlock(hClipData);
 CloseClipboard;
 
-if (Regex(strpas(StrData), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (CharPos('.', strpas(strData)) > 0) and (decimal = true) or (CharPos('-', strpas(strData)) > 0) and ((negative = true) or (length(s) > 0)) then
+if (Regex(strpas(StrData), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (ChrPos('.', strpas(strData)) > 0) and (decimal = true) or (ChrPos('-', strpas(strData)) > 0) and ((negative = true) or (length(s) > 0)) then
   begin
   pre_pos:=WhereXY;
 
@@ -398,9 +398,9 @@ repeat
 
     write(Copy(input, i + 1, length(input)));
 
-    if (decimal = false) and (CharPos('.', input) > 0) then decimal:=true;
+    if (decimal = false) and (ChrPos('.', input) > 0) then decimal:=true;
 
-    if (negative = false) and (CharPos('-', input) > 0) then negative:=true;
+    if (negative = false) and (ChrPos('-', input) > 0) then negative:=true;
     end;
 
   if (length(input) > 0) then
@@ -451,7 +451,7 @@ repeat
 
       if (check_dec = true) and (check_neg = true) then
         begin
-        if (decimal = true) then sep:=CharPos('.', input)
+        if (decimal = true) then sep:=ChrPos('.', input)
 
         else sep:=length(input) + 1;
         end;
@@ -560,8 +560,8 @@ end;
 
 //============================ Decimal to Binary ============================//
 
-Procedure DecToBin;
-var dec_mul, compare, limit: ansistring;
+Procedure DecToBin(dec_mul: ansistring);
+var compare, limit: ansistring;
     show_loop: boolean = true;
     split: cardinal;
 begin
@@ -584,8 +584,7 @@ if (ask_trunc = true) then
 
 write('.');
 
-dec_mul:=Copy(s, sep + 1, length(s)); dec_res:='.';
-split:=length(dec_mul) - CharPos('1', ReverseString(IntToBin(dec_mul))) + 1;
+split:=abs(length(dec_mul) - ChrPos('1', ReverseString(IntToBin(dec_mul))) + 1); dec_res:='.';
 
 repeat
   if (show_loop = true) then
@@ -768,7 +767,7 @@ repeat
 
          dec_res:='';
 
-         if (decimal = true) then DecToBin;
+         if (decimal = true) then DecToBin(Copy(s, sep + 1, length(s)));
 
          End_screen;
          end;
