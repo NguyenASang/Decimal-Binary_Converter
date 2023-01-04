@@ -464,27 +464,25 @@ end;
 
 Function BinToInt: ansistring;
 begin
-num_res:='00';
+BinToInt:='00';
 
 for i:=1 to sep - 1 do
   begin
-  if (num_res[1] in ['5'..'9']) then num_res:='0' + num_res;
+  if (BinToInt[1] in ['5'..'9']) then BinToInt:='0' + BinToInt;
 
-  for u:=1 to length(num_res) - 1 do
+  for u:=1 to length(BinToInt) - 1 do
     begin
-    if (num_res[u + 1] in ['5'..'9']) then num_res[u]:=Mul_big[ChrToInt(num_res[u])]
+    if (BinToInt[u + 1] in ['5'..'9']) then BinToInt[u]:=Mul_big[ChrToInt(BinToInt[u])]
 
-    else num_res[u]:=Mul_small[ChrToInt(num_res[u])];
+    else BinToInt[u]:=Mul_small[ChrToInt(BinToInt[u])];
     end;
 
-  num_res[u]:=IntToChr(ChrToInt(num_res[u]) + ChrToInt(s[i]));
+  BinToInt[u]:=IntToChr(ChrToInt(BinToInt[u]) + ChrToInt(s[i]));
   end;
 
-delete(num_res, length(num_res), 1);
+delete(BinToInt, length(BinToInt), 1);
 
-if (negative = true) then num_res:='-' + num_res;
-
-BinToInt:=num_res;
+if (negative = true) then BinToInt:='-' + BinToInt;
 end;
 
 //============================ Binary to Decimal ============================//
@@ -538,10 +536,10 @@ end;
 
 Function IntToBin(num_div: ansistring): ansistring;
 begin
-num_div:='0' + num_div; num_res:='';
+num_div:='0' + num_div; IntToBin:='';
 
 repeat
-  num_res:=IntToChr(ChrToInt(num_div[length(num_div)]) mod 2) + num_res;
+  IntToBin:=IntToChr(ChrToInt(num_div[length(num_div)]) mod 2) + IntToBin;
 
   for i:=length(num_div) downto 2 do
     begin
@@ -553,17 +551,16 @@ repeat
   if (num_div[2] = '0') then delete(num_div, 1, 1);
 until (num_div = '0');
 
-if (negative = true) then num_res:='-' + num_res;
-
-IntToBin:=num_res;
+if (negative = true) then IntToBin:='-' + IntToBin;
 end;
 
 //============================ Decimal to Binary ============================//
 
 Procedure DecToBin(dec_mul: ansistring);
-var compare, limit: ansistring;
-    show_loop: boolean = true;
+var show_loop: boolean = true;
+    compare: ansistring;
     split: cardinal;
+    limit: variant;
 begin
 if (ask_trunc = true) then
   begin
@@ -657,7 +654,7 @@ repeat
         end
     until (key <> '');
     end;
-until (dec_mul = '') or (show_loop = false) and (IntToStr(length(dec_res) - 1) = limit);
+until (dec_mul = '') or (show_loop = false) and (length(dec_res) - 1 = limit);
 
 if (show_loop = true) and (dec_mul <> '') then
   begin
@@ -763,7 +760,9 @@ repeat
 
          writeln(#13#10#13#10'Convert to binary: ');
 
-         write(IntToBin(Copy(s, 1, sep - 1)));
+         num_res:=IntToBin(Copy(s, 1, sep - 1));
+
+         write(num_res);
 
          dec_res:='';
 
@@ -781,7 +780,9 @@ repeat
 
          writeln(#13#10#13#10'Convert to decimal: ');
 
-         write(BinToInt);
+         num_res:=BinToInt;
+
+         write(num_res);
 
          dec_res:='';
 
