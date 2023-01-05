@@ -1,6 +1,6 @@
 {$ASMMODE INTEL}
 
-uses keyboard, process, regexpr, strutils, sysutils, windows;
+uses process, regexpr, strutils, sysutils, windows;
 
 const Div_even  : array [0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
       Div_odd   : array [0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
@@ -231,19 +231,30 @@ cursor_pos.y:=y;
 SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor_pos);
 end;
 
-Function Color(attr: byte): string;
+Function Color(attr: word): string;
 begin
 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), attr);
 Color:='';
 end;
 
 Function Readkey: char;
-var k: TKeyEvent;
+var Event      : TInputrecord;
+    EventsRead : dword;
 begin
-InitKeyBoard;
-  k:=TranslateKeyEvent(GetKeyEvent);
-  readkey:=GetKeyEventChar(k);
-DoneKeyBoard;
+readkey:=#0;
+
+repeat
+  ReadConsoleInput(GetStdhandle(STD_INPUT_HANDLE), Event, 1, EventsRead);
+
+  if (Event.Eventtype = key_Event) and (Event.Event.KeyEvent.bKeyDown) then
+    begin
+    // Prevent Ctrl key from being captured
+    if (Event.Event.KeyEvent.wVirtualKeyCode <> 17) then Readkey:=Event.Event.KeyEvent.asciichar;
+    end;
+
+  // Trap Ctrl + V event
+  if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then Readkey:=#22;
+until (Readkey <> #0);
 end;
 
 Function ScreenXY: coord;
@@ -379,8 +390,8 @@ if (check_dec = true) and (check_neg = true) then
 
 repeat
   key:=readkey;
-                          //===== Prevent Ctrl + V from being treated as normal input =====//
-  if (key in CharSet) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (check_neg = true) and (length(input) = 0) and (key = '-') or (check_dec = true) and (decimal = false) and (key = '.') then
+
+  if (key in CharSet) or (check_neg = true) and (length(input) = 0) and (key = '-') or (check_dec = true) and (decimal = false) and (key = '.') then
     begin
     if (key = '-') then negative:=true;
 
@@ -391,7 +402,7 @@ repeat
     write(key);
     end;
 
-  if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then
+  if (key = #22) then
     begin
     i:=length(input);
     input:=input + PasteFromClip;
