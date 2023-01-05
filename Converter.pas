@@ -11,7 +11,7 @@ const Div_even  : array [0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3'
       Red       = $4;
       White     = $7;
 
-var ctrl_c, auto_copy, ask_trunc, show_tip, decimal, negative: boolean;
+var allow_copy, auto_copy, ask_trunc, show_tip, decimal, negative: boolean;
     s, num_res, dec_res: ansistring;
     i, u, sep: cardinal;
     pre_pos: coord;
@@ -231,10 +231,10 @@ cursor_pos.y:=y;
 SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor_pos);
 end;
 
-Function TextColor(Color: byte): string;
+Function Color(attr: byte): string;
 begin
-SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Color);
-TextColor:='';
+SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), attr);
+Color:='';
 end;
 
 Function Readkey: char;
@@ -300,9 +300,9 @@ if (Regex(strpas(StrData), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (ChrPos(
   begin
   pre_pos:=WhereXY;
 
-  write(TextColor(Red), #13#10#13#10'Warning: ');
+  write(Color(Red), #13#10#13#10'Warning: ');
 
-  write(TextColor(White), 'Your clipboard contains invalid characters');
+  write(Color(White), 'Your clipboard contains invalid characters');
 
   repeat until (readkey = #13); // <- Alternative to readln
 
@@ -338,25 +338,25 @@ else begin
 
   GotoXY(0, WhereXY.y + 2);
 
-  write(TextColor(White), 'Press backspace to ');
+  write(Color(White), 'Press backspace to ');
 
-  write(TextColor(Green), 'back ');
+  write(Color(Green), 'back ');
 
-  write(TextColor(White), '| Esc to ');
+  write(Color(White), '| Esc to ');
 
-  write(TextColor(Red), 'exit');
+  write(Color(Red), 'exit');
 
   GotoXY(0, WhereXY.y - 2);
   end;
 
-write(TextColor(Green), 'Status: ');
+write(Color(Green), 'Status: ');
 
-write(TextColor(Yellow), 'Copied');
+write(Color(Yellow), 'Copied');
 end;
 
 Function HandlerRoutine(dwCtrlType: DWORD): WINBOOL; stdcall;
 begin
-if (ctrl_c = true) and (dwCtrlType = CTRL_C_EVENT) then CopyToClip(num_res + dec_res);
+if (allow_copy = true) and (dwCtrlType = CTRL_C_EVENT) then CopyToClip(num_res + dec_res);
 end;
 
 Function New_Terminal: boolean;
@@ -368,7 +368,7 @@ end;
 
 //============================ Input check ============================//
 
-Function Input(check_dec, check_neg: boolean; CharSet: TSysCharSet): ansistring;
+Function Input(CharSet: TSysCharSet; check_dec, check_neg: boolean): ansistring;
 begin
 input:='';
 
@@ -457,7 +457,9 @@ repeat
         end;
       end;
     end;
-until (length(input) > 0) and (key = #13);
+until (length(input) > 0) and (key = #13) or (key = #27);
+
+if (key = #27) then input:='';
 end;
 
 //============================ Binary to Integer ============================//
@@ -570,7 +572,7 @@ if (ask_trunc = true) then
 
   writeln('How many digits do you want to display ?');
 
-  limit:=Input(false, false, ['0'..'9']);
+  limit:=Input(['0'..'9'], false, false);
 
   clear(0, pre_pos.y, ScreenXY.x * (ScreenXY.y - pre_pos.y), 0, pre_pos.y);
 
@@ -590,7 +592,7 @@ repeat
 
     if (length(dec_res) - 1 = split) then
       begin
-      TextColor(Green);
+      Color(Green);
       compare:=dec_mul;
       end;
     end;
@@ -621,21 +623,21 @@ repeat
     begin
     pre_pos:=WhereXY;
 
-    writeln(TextColor(White), '...');
+    writeln(Color(White), '...');
 
-    write(TextColor(Red), #13#10'Warning: ');
+    write(Color(Red), #13#10'Warning: ');
 
-    writeln(TextColor(White), 'The converter has been paused');
+    writeln(Color(White), 'The converter has been paused');
 
     write(#13#10'Press any key to ');
 
-    write(TextColor(Green), 'continue ');
+    write(Color(Green), 'continue ');
 
-    write(TextColor(White), '| Esc to ');
+    write(Color(White), '| Esc to ');
 
-    write(TextColor(Red), 'stop ');
+    write(Color(Red), 'stop ');
 
-    write(TextColor(White), 'the converter');
+    write(Color(White), 'the converter');
 
     repeat
       key:=readkey;
@@ -649,7 +651,7 @@ repeat
       else begin
         Clear(pre_pos.x, pre_pos.y, ScreenXY.x * 5, pre_pos.x, pre_pos.y);
 
-        if (show_loop = true) then TextColor(Green);
+        if (show_loop = true) then Color(Green);
         break;
         end
     until (key <> '');
@@ -658,13 +660,13 @@ until (dec_mul = '') or (show_loop = false) and (length(dec_res) - 1 = limit);
 
 if (show_loop = true) and (dec_mul <> '') then
   begin
-  writeln(TextColor(White), '...');
+  writeln(Color(White), '...');
 
-  write(TextColor(Red), #13#10'Note: ');
+  write(Color(Red), #13#10'Note: ');
 
-  write(TextColor(Green), 'Green part ');
+  write(Color(Green), 'Green part ');
 
-  write(TextColor(White), 'is the forever loop part');
+  write(Color(White), 'is the forever loop part');
   end;
 end;
 
@@ -672,24 +674,24 @@ end;
 
 Procedure End_screen;
 begin
-ctrl_c:=true;
+allow_copy:=true;
 
 if (show_tip = true) then
   begin
-  write(TextColor(Yellow), #13#10#13#10'Tip: ');
+  write(Color(Yellow), #13#10#13#10'Tip: ');
 
-  write(TextColor(White), 'You can copy the result by pressing Ctrl + C');
+  write(Color(White), 'You can copy the result by pressing Ctrl + C');
   end;
 
 write(#13#10#13#10'Press backspace to ');
 
-write(TextColor(Green), 'back ');
+write(Color(Green), 'back ');
 
-write(TextColor(White), '| Esc to ');
+write(Color(White), '| Esc to ');
 
-write(TextColor(Red), 'return ');
+write(Color(Red), 'return ');
 
-write(TextColor(White), 'to main menu');
+write(Color(White), 'to main menu');
 
 if (auto_copy = false) then
   begin
@@ -709,172 +711,156 @@ procedure Welcome_screen;
 begin
 clear(0, 0, ScreenXY.x * ScreenXY.y, 0, 0);
 
-//This design is inspired by https://github.com/abbodi1406/KMS_VL_ALL_AIO
-writeln(TextColor(White), '  ', dupestring('_', 59));
+//This design is inspired of https://github.com/abbodi1406/KMS_VL_ALL_AIO
 
-writeln(#13#10'      Main options:'#13#10);
+write(Color(White), '  _______________________________________________________'#13#10#13#10);
 
-writeln('  [1] Decimal to Binary');
-writeln('  [2] Binary To Decimal');
+write(Color(White), '      Main options:                                      '#13#10#13#10);
 
-writeln('  ', dupestring('_', 59));
+write(Color(White), '  [1] Decimal to Binary                                        '#13#10);
+write(Color(White), '  [2] Binary To Decimal                                        '#13#10);
 
-writeln(#13#10'      Configuration:'#13#10);
+write(Color(White), '  _______________________________________________________'#13#10#13#10);
 
-write('  [3] Show tips                                         ');
-if (show_tip = false) then writeln(TextColor(Red), '[No]') else writeln('[Yes]');
+write(Color(White), '      Configuration:                                     '#13#10#13#10);
 
-write(TextColor(White), '  [4] Auto copy result to clipboard                     ');
-if (auto_copy = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]');
+write(Color(White), '  [3] Show tips                                     ');
 
-write(TextColor(White), '  [5] Ask for truncating (Decimal to Binary)            ');
-if (ask_trunc = true) then writeln(TextColor(Green), '[Yes]') else writeln('[No]');
+if (show_tip = false) then writeln(Color(Red), '[Nah]') else writeln('[Yes]');
 
-writeln('  ', dupestring('_', 59), #13#10);
+write(Color(White), '  [4] Auto copy result to clipboard                 ');
 
-write('  Press key to choose options or Esc key to Exit: ');
+if (auto_copy = true) then writeln(Color(Green), '[Yes]') else writeln('[Nah]');
+
+write(Color(White), '  [5] Ask for truncating (Decimal to Binary)        ');
+
+if (ask_trunc = true) then writeln(Color(Green), '[Yes]') else writeln('[Nah]');
+
+write(Color(White), '  _______________________________________________________'#13#10#13#10);
+
+write(Color(White), '  Press key to choose options or Esc key to Exit: ');
 
 repeat
-  if (key = #8) and (s <> '') then
+  if (key = #8) then
     begin
+    Clear(0, 0, ScreenXY.x * ScreenXY.y, 0, 0);
+
     if (u = 0) then key:='1' else key:='2';
     end
 
-  else key:=readkey;
+  else begin
+    key:=readkey;
 
-  case lowercase(key) of
+    if (key in ['1'..'2']) then Clear(0, 0, ScreenXY.x * 30, 0, 0);
+
+    if (key in ['3'..'5']) then Clear(0, 29, ScreenXY.x, WhereXY.x, WhereXY.y);
+    end;
+
+  case key of
     '1': begin
          u:=0;
 
-         Clear(0, 0, ScreenXY.x * (ScreenXY.y - WhereXY.y), 0, 0);
+         write(Color(White), 'Enter decimal to convert: ');
 
-         write(TextColor(White), 'Enter decimal to convert: ');
+         s:=Input(['0'..'9'], true, true);
 
-         s:=Input(true, true, ['0'..'9']);
+         if (s <> '') then
+           begin
+           writeln(#13#10#13#10'Convert to binary: ');
 
-         writeln(#13#10#13#10'Convert to binary: ');
+           num_res:=IntToBin(Copy(s, 1, sep - 1));
 
-         num_res:=IntToBin(Copy(s, 1, sep - 1));
+           write(num_res);
 
-         write(num_res);
+           dec_res:='';
 
-         dec_res:='';
+           if (decimal = true) then DecToBin(Copy(s, sep + 1, length(s)));
 
-         if (decimal = true) then DecToBin(Copy(s, sep + 1, length(s)));
+           End_Screen;
+           end;
 
-         End_screen;
+         break;
          end;
 
     '2': begin
-         Clear(0, 0, ScreenXY.x * (ScreenXY.y - WhereXY.y), 0, 0);
+         write(Color(White), 'Enter binary to convert: ');
 
-         write(TextColor(White), 'Enter binary to convert: ');
+         s:=Input(['0', '1'], true, true);
 
-         s:=Input(true, true, ['0', '1']);
+         if (s <> '') then
+           begin
+           writeln(#13#10#13#10'Convert to decimal: ');
 
-         writeln(#13#10#13#10'Convert to decimal: ');
+           num_res:=BinToInt;
 
-         num_res:=BinToInt;
+           write(num_res);
 
-         write(num_res);
+           dec_res:='';
 
-         dec_res:='';
+           if (decimal = true) then BinToDec;
 
-         if (decimal = true) then BinToDec;
+           End_Screen;
+           end;
 
-         End_screen;
+         break;
          end;
 
     '3': begin
-         Clear(2, WhereXY.y + 8, ScreenXY.x, WhereXY.x, WhereXY.y);
+         Clear(WhereXY.x + 2, WhereXY.y - 5, 5, WhereXY.x + 2, WhereXY.y - 5);
 
-         if (show_tip = false) then
-           begin
-           show_tip:=true;
+         show_tip:=not show_tip;
 
-           GotoXY(WhereXY.x + 6, WhereXY.y - 10);
-           write(TextColor(Green), '[Yes]');
-           GotoXY(WhereXY.x - 11, WhereXY.y + 10);
-           end
+         if (show_tip = false) then write(Color(Red), '[Nah]') else write(Color(Green), '[Yes]');
 
-         else begin
-           show_tip:=false;
-
-           GotoXY(WhereXY.x + 6, WhereXY.y - 10);
-           write(TextColor(Red), '[No] ');
-           GotoXY(WhereXY.x - 11, WhereXY.y + 10);
-           end;
+         GotoXY(WhereXY.x - 7, WhereXY.y + 5);
          end;
 
     '4': begin
-         Clear(2, WhereXY.y + 8, ScreenXY.x, WhereXY.x, WhereXY.y);
+         Clear(WhereXY.x + 2, WhereXY.y - 4, 5, WhereXY.x + 2, WhereXY.y - 4);
 
-         if (auto_copy = false) then
-           begin
-           auto_copy:=true;
+         auto_copy:=not auto_copy;
 
-           GotoXY(WhereXY.x + 6, WhereXY.y - 9);
-           write(TextColor(Green), '[Yes]');
-           GotoXY(WhereXY.x - 11, WhereXY.y + 9);
-           end
+         if (auto_copy = false) then write(Color(Red), '[Nah]') else write(Color(Green), '[Yes]');
 
-         else begin
-           auto_copy:=false;
-
-           GotoXY(WhereXY.x + 6, WhereXY.y - 9);
-           write(TextColor(Red), '[No] ');
-           GotoXY(WhereXY.x - 11, WhereXY.y + 9);
-           end;
+         GotoXY(WhereXY.x - 7, WhereXY.y + 4);
          end;
 
     '5': begin
+         Clear(WhereXY.x + 2, WhereXY.y - 3, 5, WhereXY.x + 2, WhereXY.y - 3);
+
+         ask_trunc:=not ask_trunc;
+
          if (ask_trunc = false) then
            begin
-           ask_trunc:=true;
+           write(Color(Red), '[Nah]');
 
-           GotoXY(WhereXY.x + 6, WhereXY.y - 8);
-           write(TextColor(Green), '[Yes]');
+           GotoXY(0, 29);
 
-           if (show_tip = true) then
-             begin
-             GotoXY(2, WhereXY.y + 16);
+           write(Color(Yellow), 'Tip: ');
 
-             Clear(WhereXY.x, WhereXY.y, ScreenXY.x, WhereXY.x, WhereXY.y);
+           write(Color(White), 'Some decimals may take a long time to display as binary, you can always pause the converter by pressing ESC key.');
 
-             write(TextColor(Yellow), 'Tip: ');
-
-             write(TextColor(White), 'To get good accuracy for your result, I recommend choosing at least 20 digits');
-
-             GotoXY(WhereXY.x - 34, WhereXY.y - 8)
-             end
-
-           else GotoXY(WhereXY.x - 11, WhereXY.y + 8);
+           GoToXY(WhereXY.x - 67, WhereXY.y - 14);
            end
 
          else begin
-           ask_trunc:=false;
+           write(Color(Green), '[Yes]');
 
-           GotoXY(WhereXY.x + 6, WhereXY.y - 8);
-           write(TextColor(Red), '[No] ');
+           GotoXY(0, 29);
 
-           if (show_tip = true) then
-             begin
-             GotoXY(2, WhereXY.y + 16);
+           write(Color(Yellow), 'Tip: ');
 
-             write(TextColor(Yellow), 'Tip: ');
+           write(Color(White), 'To get good accuracy for your result, I recommend choosing at least 20 digits.');
 
-             write(TextColor(White), 'Some decimals may take a long time to display as binary, you can always pause the converter by pressing ESC key');
-
-             GotoXY(WhereXY.x - 68, WhereXY.y - 8);
-             end
-
-           else GotoXY(WhereXY.x - 11, WhereXY.y + 8);
+           GoToXY(WhereXY.x - 33, WhereXY.y - 14);
            end;
          end;
-         
+
+    #08: key:=#0;
+
     #27: halt;
-  end;
-until (key = #27);
+    end;
+until (false);
 end;
 
 //============================ Main part ============================//
@@ -885,7 +871,7 @@ if (New_Terminal = false) then
   show_tip:=true;
 
   repeat
-    ctrl_c:=false;
+    allow_copy:=false;
     SetconsoleCtrlHandler(@handlerRoutine, TRUE);
 
     Welcome_screen;
@@ -893,9 +879,9 @@ if (New_Terminal = false) then
   end
 
 else begin
-  write(TextColor(Red), 'Attention: ');
+  write(Color(Red), 'Attention: ');
 
-  write(TextColor(White), 'Seem like you''re running this program with the new Microsoft Terminal. Since there are many errors that can be caused in this new Terminal, I recommend you to use the default terminal by running this program as administrator');
+  write(Color(White), 'Seem like you''re running this program with the new Microsoft Terminal. Since there are many errors that can be caused in this new Terminal, I recommend you to use the default terminal by running this program as administrator');
 
   repeat until (readkey <> '');
   end;
