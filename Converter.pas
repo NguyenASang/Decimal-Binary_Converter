@@ -1,6 +1,6 @@
 {$ASMMODE INTEL}
 
-uses process, regexpr, strutils, sysutils, windows;
+uses jwapsapi, regexpr, strutils, sysutils, windows;
 
 const Div_even  : array [0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
       Div_odd   : array [0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
@@ -276,13 +276,22 @@ end;
 
 //=========================== Utilities functions ===========================//
 
+Function IsFocus: boolean;
+var pid_console, pid_focus: dword;
+begin
+GetWindowThreadProcessId(GetForegroundWindow, &pid_focus);
+GetWindowThreadProcessId(GetConsoleWindow, &pid_console);
+
+IsFocus:=pid_focus = pid_console;
+end;
+
 Function Regex(str_match, reg: ansistring): boolean;
 var expr: TRegExpr;
 begin
 expr:=TRegExpr.Create;
 expr.Expression:=reg;
 
-if (expr.Exec(str_match)) then Regex:=true else Regex:=false;
+Regex:=expr.Exec(str_match);
 
 expr.Free;
 end;
@@ -345,9 +354,7 @@ CloseClipboard;
 if (show_tip = true) then Clear(0, WhereXY.y - 2, ScreenXY.x, 0, WhereXY.y - 2)
 
 else begin
-  Clear(0, WhereXY.y, ScreenXY.x, 0, WhereXY.y);
-
-  GotoXY(0, WhereXY.y + 2);
+  Clear(0, WhereXY.y, ScreenXY.x, 0, WhereXY.y + 2);
 
   write(Color(White), 'Press backspace to ');
 
@@ -370,11 +377,20 @@ begin
 if (allow_copy = true) and (dwCtrlType = CTRL_C_EVENT) then CopyToClip(num_res + dec_res);
 end;
 
-Function New_Terminal: boolean;
-var command_res: ansistring;
+
+Function NewTerm: boolean;
+var path: ansistring;
+    process: handle;
+    PID: dword;
 begin
-runcommand('cmd', ['/c', 'tasklist /v /fi "ImageName eq WindowsTerminal.exe"'], command_res);
-if (pos(ParamStr(0), command_res) <> 0) then New_Terminal:=true else New_Terminal:=false;
+GetWindowThreadProcessId(GetForegroundWindow, &PID);
+
+process:=OpenProcess(PROCESS_ALL_ACCESS or PROCESS_QUERY_INFORMATION or PROCESS_VM_READ, FALSE, &PID);
+
+setlength(path, MAX_PATH);
+GetProcessImageFileName(process, Pchar(path), MAX_PATH);
+
+NewTerm:=pos('WindowsTerminal.exe', path) > 0;
 end;
 
 //============================ Input check ============================//
@@ -630,7 +646,7 @@ repeat
 
   delete(dec_mul, RPosSet(['1'..'9'], dec_mul) + 1, length(dec_mul));
 
-  if (GetAsyncKeyState(27) < 0) then
+  if (GetAsyncKeyState(27) < 0) and (IsFocus = true) then
     begin
     pre_pos:=WhereXY;
 
@@ -877,23 +893,22 @@ end;
 //============================ Main part ============================//
 
 begin
-if (New_Terminal = false) then
+if (NewTerm = true) then
   begin
-  show_tip:=true;
-
-  repeat
-    allow_copy:=false;
-    SetconsoleCtrlHandler(@handlerRoutine, TRUE);
-
-    Welcome_screen;
-  until (false);
-  end
-
-else begin
   write(Color(Red), 'Attention: ');
 
   write(Color(White), 'Seem like you''re running this program with the new Microsoft Terminal. Since there are many errors that can be caused in this new Terminal, I recommend you to use the default terminal by running this program as administrator');
 
   repeat until (readkey <> '');
+  halt;
   end;
+
+show_tip:=true;
+
+repeat
+  allow_copy:=false;
+  SetconsoleCtrlHandler(@handlerRoutine, TRUE);
+
+  Welcome_screen;
+until (false);
 end.
