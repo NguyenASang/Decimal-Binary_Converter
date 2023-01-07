@@ -7,11 +7,11 @@ const Div_even  : array [0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3'
       Mul_small : array [0..9] of char = ('0', '2', '4', '6', '8', '0', '2', '4', '6', '8');
       Mul_big   : array [0..9] of char = ('1', '3', '5', '7', '9', '1', '3', '5', '7', '9');
       Green     = $2;
-      Yellow    = $E;
       Red       = $4;
       White     = $7;
+      Yellow    = $E;
 
-var allow_copy, auto_copy, ask_trunc, show_tip, decimal, negative: boolean;
+var allow_copy, auto_copy, ask_trunc, decimal, negative: boolean;
     s, num_res, dec_res: ansistring;
     i, u, sep: cardinal;
     pre_pos: coord;
@@ -216,82 +216,77 @@ end;
 
 //====================== Alternative functions for Crt ======================//
 
-Function WhereXY: coord;
-var cursor_pos: TConsoleScreenBufferInfo;
+Function Cursor: coord;
+var pos: TConsoleScreenBufferInfo;
 begin
-GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), cursor_pos);
-WhereXY:=cursor_pos.dwCursorPosition;
+GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), pos);
+Cursor:=pos.dwCursorPosition;
 end;
 
 Procedure GoToXY(x, y: cardinal);
-var cursor_pos: coord;
+var pos: coord;
 begin
-cursor_pos.x:=x;
-cursor_pos.y:=y;
-SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor_pos);
+pos.x:=x; pos.y:=y;
+SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 end;
 
-Function Color(attr: word): string;
+Function Color(attr: byte): string;
 begin
 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), attr);
 Color:='';
 end;
 
 Function Readkey: char;
-var Event      : TInputrecord;
-    EventsRead : dword;
+var event: TInputrecord;
+    EventsRead: dword;
 begin
 readkey:=#0;
 
 repeat
-  ReadConsoleInput(GetStdhandle(STD_INPUT_HANDLE), Event, 1, EventsRead);
+  ReadConsoleInput(GetStdhandle(STD_INPUT_HANDLE), event, 1, EventsRead);
 
-  if (Event.Eventtype = key_Event) and (Event.Event.KeyEvent.bKeyDown) then
-    begin
-    // Prevent Ctrl key from being captured
-    if (Event.Event.KeyEvent.wVirtualKeyCode <> 17) then Readkey:=Event.Event.KeyEvent.asciichar;
-    end;
+  if (event.Eventtype = key_Event) and (event.Event.KeyEvent.bKeyDown) then Readkey:=event.Event.KeyEvent.asciichar;
 
   // Trap Ctrl + V event
   if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then Readkey:=#22;
 until (Readkey <> #0);
 end;
 
-Function ScreenXY: coord;
-var ScreenSize: TConsoleScreenBufferInfo;
+Function Screen: coord;
+var size: TConsoleScreenBufferInfo;
 begin
-GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), ScreenSize);
-ScreenXY:=ScreenSize.dwSize;
+GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), size);
+Screen:=size.dwSize;
 end;
 
-Procedure Clear(start_x, start_y, area, end_x, end_y: cardinal);
-var dwNumWritten: dword;
+Procedure Clear(x, y, area, des_x, des_y: cardinal);
+var written: dword;
     pos: coord;
 begin
-pos.x:=start_x;
-pos.y:=start_y;
-FillConsoleOutputCharacter(GetStdHandle(STD_OUTPUT_HANDLE), ' ', area, pos, &dwNumWritten);
-GotoXY(end_x, end_y);
+pos.x:=x; pos.y:=y;
+FillConsoleOutputCharacter(GetStdHandle(STD_OUTPUT_HANDLE), ' ', area, pos, written);
+
+GotoXY(des_x, des_y);
 end;
 
 //=========================== Utilities functions ===========================//
 
 Function IsFocus: boolean;
-var pid_console, pid_focus: dword;
+var PidConsole, PidFocus: dword;
 begin
-GetWindowThreadProcessId(GetForegroundWindow, &pid_focus);
-GetWindowThreadProcessId(GetConsoleWindow, &pid_console);
+GetWindowThreadProcessId(GetForegroundWindow, PidFocus);
+GetWindowThreadProcessId(GetConsoleWindow, PidConsole);
 
-IsFocus:=pid_focus = pid_console;
+IsFocus:=PidFocus = PidConsole;
 end;
 
-Function Regex(str_match, reg: ansistring): boolean;
+Function Regex(str, reg: ansistring): boolean;
 var expr: TRegExpr;
 begin
 expr:=TRegExpr.Create;
 expr.Expression:=reg;
 
-Regex:=expr.Exec(str_match);
+Regex:=expr.Exec(str);
 
 expr.Free;
 end;
@@ -306,100 +301,88 @@ for RPosSet:=length(str) downto 1 do
 RPosSet:=0;
 end;
 
-Function PasteFromClip: ansistring;
-var hClipData: handle;
-    StrData: pchar;
+Function PasteClip: ansistring;
+var data: handle;
+    str: pchar;
 begin
 OpenClipboard(0);
-  hClipdata:=GetClipboardData(CF_TEXT);
-  StrData:=GlobalLock(hClipData);
-  GlobalUnlock(hClipData);
+  data:=GetClipboardData(CF_TEXT);
+  str:=GlobalLock(data);
+  GlobalUnlock(data);
 CloseClipboard;
 
-if (Regex(strpas(StrData), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (ChrPos('.', strpas(strData)) > 0) and (decimal = true) or (ChrPos('-', strpas(strData)) > 0) and ((negative = true) or (length(s) > 0)) then
+if (Regex(strpas(str), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (ChrPos('.', strpas(str)) > 0) and (decimal = true) or (ChrPos('-', strpas(str)) > 0) and ((negative = true) or (length(s) > 0)) then
   begin
-  pre_pos:=WhereXY;
+  pre_pos:=Cursor;
 
   write(Color(Red), #13#10#13#10'Warning: ');
 
   write(Color(White), 'Your clipboard contains invalid characters');
 
-  repeat until (readkey = #13); // <- Alternative to readln
+  repeat key:=readkey until (key <> '');
 
-  Clear(pre_pos.x, pre_pos.y, ScreenXY.x * 3, pre_pos.x, pre_pos.y);
+  Clear(pre_pos.x, pre_pos.y, Screen.x * 3, pre_pos.x, pre_pos.y);
 
-  PasteFromClip:='';
-  end
+  exit('');
+  end;
 
-else PasteFromClip:=Strpas(strdata);
+PasteClip:=strpas(str);
 end;
 
-Procedure CopyToClip(text: ansistring);
-var pchData, StrData: pchar;
-    hClipData: HGlobal;
+Procedure CopyClip(text: ansistring);
+var PchData, StrData: pchar;
+    data: HGlobal;
 begin
+if (text <> PasteClip) then
+  begin
+  Clear(0, Cursor.y - 2, Screen.x, 0, Cursor.y - 2);
+
+  write(Color(Green), 'Status: ');
+
+  write(Color(Yellow), 'Copied');
+  end;
+
 StrData:=Pchar(text);
 
 Openclipboard(0);
   EmptyClipboard;
 
-  hClipData:=GlobalAlloc(GMEM_MOVEABLE, length(strData) + 1);
-  pchData:=GlobalLock(hClipData);
-  strcopy(pchData, LPCSTR(StrData));
-  GlobalUnlock(hClipData);
+  data:=GlobalAlloc(GMEM_MOVEABLE, length(StrData) + 1);
+  PchData:=GlobalLock(data);
+  strcopy(PchData, LPCSTR(StrData));
+  GlobalUnlock(data);
 
-  SetClipboardData(CF_TEXT, hclipData);
+  SetClipboardData(CF_TEXT, data);
 CloseClipboard;
-
-if (show_tip = true) then Clear(0, WhereXY.y - 2, ScreenXY.x, 0, WhereXY.y - 2)
-
-else begin
-  Clear(0, WhereXY.y, ScreenXY.x, 0, WhereXY.y + 2);
-
-  write(Color(White), 'Press backspace to ');
-
-  write(Color(Green), 'back ');
-
-  write(Color(White), '| Esc to ');
-
-  write(Color(Red), 'exit');
-
-  GotoXY(0, WhereXY.y - 2);
-  end;
-
-write(Color(Green), 'Status: ');
-
-write(Color(Yellow), 'Copied');
 end;
 
-Function HandlerRoutine(dwCtrlType: DWORD): WINBOOL; stdcall;
+Function HandlerRoutine(CtrlType: dword): bool; stdcall;
 begin
-if (allow_copy = true) and (dwCtrlType = CTRL_C_EVENT) then CopyToClip(num_res + dec_res);
+if (allow_copy = true) and (CtrlType = CTRL_C_EVENT) then CopyClip(num_res + dec_res);
 end;
-
 
 Function NewTerm: boolean;
 var path: ansistring;
-    process: handle;
-    PID: dword;
+    proc: handle;
+    pid: dword;
 begin
-GetWindowThreadProcessId(GetForegroundWindow, &PID);
+GetWindowThreadProcessId(GetForegroundWindow, pid);
 
-process:=OpenProcess(PROCESS_ALL_ACCESS or PROCESS_QUERY_INFORMATION or PROCESS_VM_READ, FALSE, &PID);
+proc:=OpenProcess(PROCESS_ALL_ACCESS, false, pid);
 
 setlength(path, MAX_PATH);
-GetProcessImageFileName(process, Pchar(path), MAX_PATH);
+GetProcessImageFileName(proc, Pchar(path), MAX_PATH);
 
 NewTerm:=pos('WindowsTerminal.exe', path) > 0;
 end;
 
-//============================ Input check ============================//
+//============================ Check input ============================//
 
-Function Input(CharSet: TSysCharSet; check_dec, check_neg: boolean): ansistring;
+Function Input(CharSet: TSysCharSet; chk_dec, chk_neg: boolean): ansistring;
 begin
 input:='';
 
-if (check_dec = true) and (check_neg = true) then
+if (chk_dec = true) and (chk_neg = true) then
   begin
   decimal:=false; negative:=false;
   end;
@@ -407,7 +390,19 @@ if (check_dec = true) and (check_neg = true) then
 repeat
   key:=readkey;
 
-  if (key in CharSet) or (check_neg = true) and (length(input) = 0) and (key = '-') or (check_dec = true) and (decimal = false) and (key = '.') then
+  if (key = #22) then
+    begin
+    i:=length(input);
+    input:=input + PasteClip;
+
+    write(Copy(input, i + 1, length(input)));
+
+    if (decimal = false) and (ChrPos('.', input) > 0) then decimal:=true;
+
+    if (negative = false) and (ChrPos('-', input) > 0) then negative:=true;
+    end;
+
+  if (key in CharSet) or (chk_neg = true) and (length(input) = 0) and (key = '-') or (chk_dec = true) and (decimal = false) and (key = '.') then
     begin
     if (key = '-') then negative:=true;
 
@@ -418,75 +413,51 @@ repeat
     write(key);
     end;
 
-  if (key = #22) then
+  if (length(input) > 0) and (key = #8) then
     begin
-    i:=length(input);
-    input:=input + PasteFromClip;
-
-    write(Copy(input, i + 1, length(input)));
-
-    if (decimal = false) and (ChrPos('.', input) > 0) then decimal:=true;
-
-    if (negative = false) and (ChrPos('-', input) > 0) then negative:=true;
-    end;
-
-  if (length(input) > 0) then
-    begin
-    if (key = #8) then
+    if (Cursor.x = 0) then
       begin
-      if (WhereXY.x = 0) then
-        begin
-        GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
-        write(' ');
-        GotoXY(ScreenXY.x - 1, WhereXY.y - 1);
-        end
+      GotoXY(Screen.x - 1, Cursor.y - 1);
+      write(' ');
+      GotoXY(Screen.x - 1, Cursor.y - 1);
+      end
 
-      else begin
-        GotoXY(WhereXY.x - 1, WhereXY.y);
-        write(' ');
-        GotoXY(WhereXY.x - 1, WhereXY.y);
-        end;
-
-      if (input[length(input)] = '.') then decimal:=false;
-
-      if (input[length(input)] = '-') then negative:=false;
-
-      delete(input, length(input), 1);
+    else begin
+      GotoXY(Cursor.x - 1, Cursor.y);
+      write(' ');
+      GotoXY(Cursor.x - 1, Cursor.y);
       end;
 
-    if (key = #13) then
-      begin
-      if (check_neg = true) and (negative = true) then delete(input, 1, 1);
+    if (input[length(input)] = '.') then decimal:=false;
 
-      if (check_dec = true) and (decimal = true) and (input[length(input)] in ['0', '.']) then
-        begin
-        repeat
-          if (input[length(input)] = '.') then decimal:=false;
+    if (input[length(input)] = '-') then negative:=false;
 
-          delete(input, length(input), 1);
-        until (input[length(input)] in CharSet) or (decimal = false);
-        end;
-
-      if (length(input) > 1) and (input[1] in ['0', '.']) then
-        begin
-        repeat
-          if (input[1] = '.') then input:='0' + input
-
-          else delete(input, 1, 1);
-        until (input[1] in CharSet) or (input[2] = '.') or (input = '0');
-        end;
-
-      if (check_dec = true) and (check_neg = true) then
-        begin
-        if (decimal = true) then sep:=ChrPos('.', input)
-
-        else sep:=length(input) + 1;
-        end;
-      end;
+    delete(input, length(input), 1);
     end;
-until (length(input) > 0) and (key = #13) or (key = #27);
 
-if (key = #27) then input:='';
+  if (key = #27) then exit('');
+until (length(input) > 0) and (key = #13);
+
+if (chk_neg = true) and (negative = true) then delete(input, 1, 1);
+
+while (input <> '0') and (Pos('0.', input) > 1) and (input[1] in ['0', '.']) do
+  begin
+  if (input[1] = '.') then input:='0' + input
+
+  else delete(input, 1, 1);
+  end;
+
+if (chk_dec = true) and (decimal = true) then
+  begin
+  while (decimal = true) and (input[length(input)] in ['0', '.']) do
+    begin
+    if (input[length(input)] = '.') then decimal:=false;
+
+    delete(input, length(input), 1);
+    end;
+  end;
+
+if (decimal = true) then sep:=ChrPos('.', input) else sep:=length(input) + 1;
 end;
 
 //============================ Binary to Integer ============================//
@@ -593,15 +564,15 @@ var show_loop: boolean = true;
 begin
 if (ask_trunc = true) then
   begin
-  clear(0, WhereXY.y - 1, ScreenXY.x * 6, 0, WhereXY.y - 1);
+  clear(0, Cursor.y - 1, Screen.x, 0, Cursor.y - 1);
 
-  pre_pos:=WhereXY;
+  pre_pos:=Cursor;
 
   writeln('How many digits do you want to display ?');
 
   limit:=Input(['0'..'9'], false, false);
 
-  clear(0, pre_pos.y, ScreenXY.x * (ScreenXY.y - pre_pos.y), 0, pre_pos.y);
+  clear(0, pre_pos.y, Screen.x * (Screen.y - pre_pos.y), 0, pre_pos.y);
 
   write('Convert to binary:'#13#10, num_res);
 
@@ -648,7 +619,7 @@ repeat
 
   if (GetAsyncKeyState(27) < 0) and (IsFocus = true) then
     begin
-    pre_pos:=WhereXY;
+    pre_pos:=Cursor;
 
     writeln(Color(White), '...');
 
@@ -671,12 +642,12 @@ repeat
 
       if (key = #27) then
         begin
-        Clear(pre_pos.x + 3, pre_pos.y, ScreenXY.x * 5, pre_pos.x + 3, pre_pos.y);
+        Clear(pre_pos.x + 3, pre_pos.y, Screen.x * 5, pre_pos.x + 3, pre_pos.y);
         exit;
         end
 
       else begin
-        Clear(pre_pos.x, pre_pos.y, ScreenXY.x * 5, pre_pos.x, pre_pos.y);
+        Clear(pre_pos.x, pre_pos.y, Screen.x * 5, pre_pos.x, pre_pos.y);
 
         if (show_loop = true) then Color(Green);
         break;
@@ -703,14 +674,11 @@ Procedure End_screen;
 begin
 allow_copy:=true;
 
-if (show_tip = true) then
-  begin
-  write(Color(Yellow), #13#10#13#10'Tip: ');
+write(Color(Yellow), #13#10#13#10'Tip: ');
 
-  write(Color(White), 'You can copy the result by pressing Ctrl + C');
-  end;
+writeln(Color(White), 'You can copy the result by pressing Ctrl + C');
 
-write(#13#10#13#10'Press backspace to ');
+write(#13#10'Press backspace to ');
 
 write(Color(Green), 'back ');
 
@@ -724,19 +692,19 @@ if (auto_copy = false) then
   begin
   repeat
     key:=readkey;
-    if (key = #3) then CopyToClip(num_res + dec_res);
+    if (key = #3) then CopyClip(num_res + dec_res);
   until (key = #27) or (key = #8);
   end
 
 else begin
-  CopyToClip(num_res + dec_res);
+  CopyClip(num_res + dec_res);
   repeat key:=readkey until (key <> '');
   end;
 end;
 
 procedure Welcome_screen;
 begin
-clear(0, 0, ScreenXY.x * ScreenXY.y, 0, 0);
+clear(0, 0, Screen.x * Screen.y, 0, 0);
 
 //This design is inspired of https://github.com/abbodi1406/KMS_VL_ALL_AIO
 
@@ -745,21 +713,17 @@ write(Color(White), '  _______________________________________________________'#
 write(Color(White), '      Main options:                                      '#13#10#13#10);
 
 write(Color(White), '  [1] Decimal to Binary                                        '#13#10);
-write(Color(White), '  [2] Binary To Decimal                                        '#13#10);
+write(Color(White), '  [2] Binary to Decimal                                        '#13#10);
 
 write(Color(White), '  _______________________________________________________'#13#10#13#10);
 
 write(Color(White), '      Configuration:                                     '#13#10#13#10);
 
-write(Color(White), '  [3] Show tips                                     ');
-
-if (show_tip = false) then writeln(Color(Red), '[Nah]') else writeln('[Yes]');
-
-write(Color(White), '  [4] Auto copy result to clipboard                 ');
+write(Color(White), '  [3] Auto copy result to clipboard                 ');
 
 if (auto_copy = true) then writeln(Color(Green), '[Yes]') else writeln('[Nah]');
 
-write(Color(White), '  [5] Ask for truncating (Decimal to Binary)        ');
+write(Color(White), '  [4] Ask for truncating (Decimal to Binary)        ');
 
 if (ask_trunc = true) then writeln(Color(Green), '[Yes]') else writeln('[Nah]');
 
@@ -770,7 +734,7 @@ write(Color(White), '  Press key to choose options or Esc key to Exit: ');
 repeat
   if (key = #8) then
     begin
-    Clear(0, 0, ScreenXY.x * ScreenXY.y, 0, 0);
+    Clear(0, 0, Screen.x * Screen.y, 0, 0);
 
     if (u = 0) then key:='1' else key:='2';
     end
@@ -778,9 +742,9 @@ repeat
   else begin
     key:=readkey;
 
-    if (key in ['1'..'2']) then Clear(0, 0, ScreenXY.x * 30, 0, 0);
+    if (key in ['1'..'2']) then Clear(0, 0, Screen.x * 30, 0, 0);
 
-    if (key in ['3'..'5']) then Clear(0, 29, ScreenXY.x, WhereXY.x, WhereXY.y);
+    if (key in ['3'..'5']) then Clear(0, 29, Screen.x, Cursor.x, Cursor.y);
     end;
 
   case key of
@@ -797,7 +761,7 @@ repeat
 
            num_res:=IntToBin(Copy(s, 1, sep - 1));
 
-           write(num_res);
+           if (ask_trunc = false) or (decimal = false) then write(num_res);
 
            dec_res:='';
 
@@ -833,27 +797,17 @@ repeat
          end;
 
     '3': begin
-         Clear(WhereXY.x + 2, WhereXY.y - 5, 5, WhereXY.x + 2, WhereXY.y - 5);
-
-         show_tip:=not show_tip;
-
-         if (show_tip = false) then write(Color(Red), '[Nah]') else write(Color(Green), '[Yes]');
-
-         GotoXY(WhereXY.x - 7, WhereXY.y + 5);
-         end;
-
-    '4': begin
-         Clear(WhereXY.x + 2, WhereXY.y - 4, 5, WhereXY.x + 2, WhereXY.y - 4);
+         Clear(Cursor.x + 2, Cursor.y - 4, 5, Cursor.x + 2, Cursor.y - 4);
 
          auto_copy:=not auto_copy;
 
          if (auto_copy = false) then write(Color(Red), '[Nah]') else write(Color(Green), '[Yes]');
 
-         GotoXY(WhereXY.x - 7, WhereXY.y + 4);
+         GotoXY(Cursor.x - 7, Cursor.y + 4);
          end;
 
-    '5': begin
-         Clear(WhereXY.x + 2, WhereXY.y - 3, 5, WhereXY.x + 2, WhereXY.y - 3);
+    '4': begin
+         Clear(Cursor.x + 2, Cursor.y - 3, 5, Cursor.x + 2, Cursor.y - 3);
 
          ask_trunc:=not ask_trunc;
 
@@ -867,7 +821,7 @@ repeat
 
            write(Color(White), 'Some decimals may take a long time to display as binary, you can always pause the converter by pressing ESC key.');
 
-           GoToXY(WhereXY.x - 67, WhereXY.y - 14);
+           GoToXY(Cursor.x - 67, Cursor.y - 15);
            end
 
          else begin
@@ -879,7 +833,7 @@ repeat
 
            write(Color(White), 'To get good accuracy for your result, I recommend choosing at least 20 digits.');
 
-           GoToXY(WhereXY.x - 33, WhereXY.y - 14);
+           GoToXY(Cursor.x - 33, Cursor.y - 15);
            end;
          end;
 
@@ -893,21 +847,19 @@ end;
 //============================ Main part ============================//
 
 begin
+SetconsoleCtrlHandler(@handlerRoutine, TRUE);
+
 if (NewTerm = true) then
   begin
   write(Color(Red), 'Attention: ');
 
   write(Color(White), 'Seem like you''re running this program with the new Microsoft Terminal. Since there are many errors that can be caused in this new Terminal, I recommend you to use the default terminal by running this program as administrator');
 
-  repeat until (readkey <> '');
-  halt;
+  repeat until (readkey <> ''); halt;
   end;
-
-show_tip:=true;
 
 repeat
   allow_copy:=false;
-  SetconsoleCtrlHandler(@handlerRoutine, TRUE);
 
   Welcome_screen;
 until (false);
