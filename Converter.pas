@@ -1,6 +1,6 @@
 {$ASMMODE INTEL}
 
-uses jwapsapi, regexpr, strutils, sysutils, windows;
+uses jwapsapi, keyboard, regexpr, strutils, sysutils, windows;
 
 const Div_even  : array [0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
       Div_odd   : array [0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
@@ -237,19 +237,12 @@ Color:='';
 end;
 
 Function Readkey: char;
-var event: TInputrecord;
-    EventsRead: dword;
+var k: TKeyEvent;
 begin
-readkey:=#0;
-
-repeat
-  ReadConsoleInput(GetStdhandle(STD_INPUT_HANDLE), event, 1, EventsRead);
-
-  if (event.Eventtype = key_Event) and (event.Event.KeyEvent.bKeyDown) then Readkey:=event.Event.KeyEvent.asciichar;
-
-  // Trap Ctrl + V event
-  if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then Readkey:=#22;
-until (Readkey <> #0);
+InitKeyBoard;
+  k:=TranslateKeyEvent(GetKeyEvent);
+  Readkey:=GetKeyEventChar(k);
+DoneKeyBoard;
 end;
 
 Function Screen: coord;
@@ -333,27 +326,25 @@ Procedure CopyClip(text: ansistring);
 var PchData, StrData: pchar;
     data: HGlobal;
 begin
-if (text <> PasteClip) then
-  begin
-  Clear(0, Cursor.y - 2, Screen.x, 0, Cursor.y - 2);
-
-  write(Color(Green), 'Status: ');
-
-  write(Color(Yellow), 'Copied');
-  end;
-
 StrData:=Pchar(text);
 
+data:=GlobalAlloc(GMEM_MOVEABLE, length(StrData) + 1);
+PchData:=GlobalLock(data);
+strcopy(PchData, LPCSTR(StrData));
+GlobalUnlock(data);
+
 Openclipboard(0);
-  EmptyClipboard;
-
-  data:=GlobalAlloc(GMEM_MOVEABLE, length(StrData) + 1);
-  PchData:=GlobalLock(data);
-  strcopy(PchData, LPCSTR(StrData));
-  GlobalUnlock(data);
-
-  SetClipboardData(CF_TEXT, data);
+EmptyClipboard;
+SetClipboardData(CF_TEXT, data);
 CloseClipboard;
+
+Clear(0, Cursor.y - 2, Screen.x, 0, Cursor.y - 2);
+
+write(Color(Green), 'Status: ');
+
+write(Color(Yellow), 'Copied');
+
+GotoXY(52, Cursor.y + 2);
 end;
 
 Function HandlerRoutine(CtrlType: dword): bool; stdcall;
@@ -390,7 +381,7 @@ if (chk_dec = true) and (chk_neg = true) then
 repeat
   key:=readkey;
 
-  if (key = #22) then
+  if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then
     begin
     i:=length(input);
     input:=input + PasteClip;
@@ -401,8 +392,8 @@ repeat
 
     if (negative = false) and (ChrPos('-', input) > 0) then negative:=true;
     end;
-
-  if (key in CharSet) or (chk_neg = true) and (length(input) = 0) and (key = '-') or (chk_dec = true) and (decimal = false) and (key = '.') then
+                          //===== Prevent Ctrl + V from being treated as normal input =====//
+  if (key in CharSet) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (key = '-') and (chk_neg = true) and (length(input) = 0) or (key = '.') and (chk_dec = true) and (decimal = false) then
     begin
     if (key = '-') then negative:=true;
 
@@ -440,22 +431,20 @@ until (length(input) > 0) and (key = #13);
 
 if (chk_neg = true) and (negative = true) then delete(input, 1, 1);
 
-while (input <> '0') and (Pos('0.', input) > 1) and (input[1] in ['0', '.']) do
-  begin
-  if (input[1] = '.') then input:='0' + input
-
-  else delete(input, 1, 1);
-  end;
+if (input[1] = '.') then input:='0' + input;
+while (input[1] in ['0', '.']) and (input <> '0') and ((input[2] <> '.') or (decimal = false)) do delete(input, 1, 1);
 
 if (chk_dec = true) and (decimal = true) then
   begin
-  while (decimal = true) and (input[length(input)] in ['0', '.']) do
+  while (input <> '0') and (decimal = true) and (input[length(input)] in ['0', '.']) do
     begin
     if (input[length(input)] = '.') then decimal:=false;
 
     delete(input, length(input), 1);
     end;
   end;
+
+if (chk_neg = true) and (input = '0') then negative:=false;
 
 if (decimal = true) then sep:=ChrPos('.', input) else sep:=length(input) + 1;
 end;
@@ -693,12 +682,12 @@ if (auto_copy = false) then
   repeat
     key:=readkey;
     if (key = #3) then CopyClip(num_res + dec_res);
-  until (key = #27) or (key = #8);
+  until (key in [#27, #8]);
   end
 
 else begin
   CopyClip(num_res + dec_res);
-  repeat key:=readkey until (key <> '');
+  repeat key:=readkey until (key in [#27, #8]);
   end;
 end;
 
