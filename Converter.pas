@@ -240,8 +240,8 @@ Function Readkey: char;
 var k: TKeyEvent;
 begin
 InitKeyBoard;
-  k:=TranslateKeyEvent(GetKeyEvent);
-  Readkey:=GetKeyEventChar(k);
+k:=TranslateKeyEvent(GetKeyEvent);
+Readkey:=GetKeyEventChar(k);
 DoneKeyBoard;
 end;
 
@@ -324,7 +324,7 @@ end;
 
 Procedure CopyClip(text: ansistring);
 var PchData, StrData: pchar;
-    data: HGlobal;
+    data: handle;
 begin
 StrData:=Pchar(text);
 
@@ -373,7 +373,7 @@ Function Input(CharSet: TSysCharSet; chk_dec, chk_neg: boolean): ansistring;
 begin
 input:='';
 
-if (chk_dec = true) and (chk_neg = true) then
+if (chk_dec = chk_neg = true) then
   begin
   decimal:=false; negative:=false;
   end;
@@ -429,12 +429,13 @@ repeat
   if (key = #27) then exit('');
 until (length(input) > 0) and (key = #13);
 
-if (chk_neg = true) and (negative = true) then delete(input, 1, 1);
+if (chk_neg = negative = true) then delete(input, 1, 1);
 
 if (input[1] = '.') then input:='0' + input;
+
 while (input[1] in ['0', '.']) and (input <> '0') and ((input[2] <> '.') or (decimal = false)) do delete(input, 1, 1);
 
-if (chk_dec = true) and (decimal = true) then
+if (chk_dec = decimal = true) then
   begin
   while (input <> '0') and (decimal = true) and (input[length(input)] in ['0', '.']) do
     begin
@@ -480,7 +481,7 @@ Procedure BinToDec;
 var div_res, dec_sum: ansistring;
     remem: byte;
 begin
-div_res:='5';
+div_res:='5'; dec_res:='';
 
 for i:=sep + 1 to length(s) do
   begin
@@ -614,9 +615,7 @@ repeat
 
     write(Color(Red), #13#10'Warning: ');
 
-    writeln(Color(White), 'The converter has been paused');
-
-    write(#13#10'Press any key to ');
+    write(Color(White), 'The converter has been paused'#13#10#13#10'Press any key to ');
 
     write(Color(Green), 'continue ');
 
@@ -626,22 +625,15 @@ repeat
 
     write(Color(White), 'the converter');
 
-    repeat
-      key:=readkey;
+    if (readkey = #27) then
+      begin
+      Clear(pre_pos.x + 3, pre_pos.y, Screen.x * 5, pre_pos.x + 3, pre_pos.y);
+      exit;
+      end;
 
-      if (key = #27) then
-        begin
-        Clear(pre_pos.x + 3, pre_pos.y, Screen.x * 5, pre_pos.x + 3, pre_pos.y);
-        exit;
-        end
+    Clear(pre_pos.x, pre_pos.y, Screen.x * 5, pre_pos.x, pre_pos.y);
 
-      else begin
-        Clear(pre_pos.x, pre_pos.y, Screen.x * 5, pre_pos.x, pre_pos.y);
-
-        if (show_loop = true) then Color(Green);
-        break;
-        end
-    until (key <> '');
+    if (show_loop = true) and (length(dec_res) - 1 >= split) then Color(Green);
     end;
 until (dec_mul = '') or (show_loop = false) and (length(dec_res) - 1 = limit);
 
@@ -653,7 +645,7 @@ if (show_loop = true) and (dec_mul <> '') then
 
   write(Color(Green), 'Green part ');
 
-  write(Color(White), 'is the forever loop part');
+  write(Color(White), 'is the part that repeats forever');
   end;
 end;
 
@@ -665,9 +657,7 @@ allow_copy:=true;
 
 write(Color(Yellow), #13#10#13#10'Tip: ');
 
-writeln(Color(White), 'You can copy the result by pressing Ctrl + C');
-
-write(#13#10'Press backspace to ');
+write(Color(White), 'You can copy result by pressing Ctrl + C'#13#10#13#10'Press backspace to ');
 
 write(Color(Green), 'back ');
 
@@ -681,17 +671,19 @@ if (auto_copy = false) then
   begin
   repeat
     key:=readkey;
+
     if (key = #3) then CopyClip(num_res + dec_res);
   until (key in [#27, #8]);
   end
 
 else begin
   CopyClip(num_res + dec_res);
+
   repeat key:=readkey until (key in [#27, #8]);
   end;
 end;
 
-procedure Welcome_screen;
+Procedure Welcome_screen;
 begin
 clear(0, 0, Screen.x * Screen.y, 0, 0);
 
@@ -726,67 +718,61 @@ repeat
     Clear(0, 0, Screen.x * Screen.y, 0, 0);
 
     if (u = 0) then key:='1' else key:='2';
+
+    u:=0;
     end
 
-  else begin
-    key:=readkey;
-
-    if (key in ['1'..'2']) then Clear(0, 0, Screen.x * 30, 0, 0);
-
-    if (key in ['3'..'5']) then Clear(0, 29, Screen.x, Cursor.x, Cursor.y);
-    end;
+  else key:=readkey;
 
   case key of
     '1': begin
-         u:=0;
+         Clear(0, 0, Screen.x * 30, 0, 0);
 
          write(Color(White), 'Enter decimal to convert: ');
 
          s:=Input(['0'..'9'], true, true);
 
-         if (s <> '') then
-           begin
-           writeln(#13#10#13#10'Convert to binary: ');
+         if (s = '') then break;
 
-           num_res:=IntToBin(Copy(s, 1, sep - 1));
+         writeln(#13#10#13#10'Convert to binary: ');
 
-           if (ask_trunc = false) or (decimal = false) then write(num_res);
+         num_res:=IntToBin(Copy(s, 1, sep - 1));
 
-           dec_res:='';
+         if (ask_trunc = false) or (decimal = false) then write(num_res);
 
-           if (decimal = true) then DecToBin(Copy(s, sep + 1, length(s)));
+         if (decimal = true) then DecToBin(Copy(s, sep + 1, length(s)));
 
-           End_Screen;
-           end;
+         End_Screen;
 
          break;
          end;
 
     '2': begin
+         Clear(0, 0, Screen.x * 30, 0, 0);
+
          write(Color(White), 'Enter binary to convert: ');
 
          s:=Input(['0', '1'], true, true);
 
-         if (s <> '') then
-           begin
-           writeln(#13#10#13#10'Convert to decimal: ');
+         if (s = '') then break;
 
-           num_res:=BinToInt;
+         writeln(#13#10#13#10'Convert to decimal: ');
 
-           write(num_res);
+         num_res:=BinToInt;
 
-           dec_res:='';
+         write(num_res);
 
-           if (decimal = true) then BinToDec;
+         if (decimal = true) then BinToDec;
 
-           End_Screen;
-           end;
+         End_Screen;
 
          break;
          end;
 
     '3': begin
-         Clear(Cursor.x + 2, Cursor.y - 4, 5, Cursor.x + 2, Cursor.y - 4);
+         Clear(0, 29, Screen.x, Cursor.x, Cursor.y);
+
+         GotoXY(Cursor.x + 2, Cursor.y - 4);
 
          auto_copy:=not auto_copy;
 
@@ -796,7 +782,9 @@ repeat
          end;
 
     '4': begin
-         Clear(Cursor.x + 2, Cursor.y - 3, 5, Cursor.x + 2, Cursor.y - 3);
+         Clear(0, 29, Screen.x, Cursor.x, Cursor.y);
+
+         GotoXY(Cursor.x + 2, Cursor.y - 3);
 
          ask_trunc:=not ask_trunc;
 
@@ -808,9 +796,9 @@ repeat
 
            write(Color(Yellow), 'Tip: ');
 
-           write(Color(White), 'Some decimals may take a long time to display as binary, you can always pause the converter by pressing ESC key.');
+           write(Color(White), 'The longer the decimal, the longer it takes to calculate, you can always pause the converter with the ESC key');
 
-           GoToXY(Cursor.x - 67, Cursor.y - 15);
+           GoToXY(Cursor.x - 65, Cursor.y - 15);
            end
 
          else begin
@@ -820,9 +808,9 @@ repeat
 
            write(Color(Yellow), 'Tip: ');
 
-           write(Color(White), 'To get good accuracy for your result, I recommend choosing at least 20 digits.');
+           write(Color(White), 'For good accuracy I recommend choosing at least 20 digits');
 
-           GoToXY(Cursor.x - 33, Cursor.y - 15);
+           GoToXY(Cursor.x - 13, Cursor.y - 15);
            end;
          end;
 
