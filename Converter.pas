@@ -11,7 +11,7 @@ const Div_even  : array [0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3'
       White     = $7;
       Yellow    = $E;
 
-var allow_copy, auto_copy, ask_trunc, decimal, negative: boolean;
+var allow_copy, auto_copy, ask_trunc, decimal, negative: bool;
     s, num_res, dec_res: ansistring;
     i, u, sep: cardinal;
     pre_pos: coord;
@@ -264,7 +264,7 @@ end;
 
 //=========================== Utilities functions ===========================//
 
-Function IsFocus: boolean;
+Function IsFocus: bool;
 var PidConsole, PidFocus: dword;
 begin
 GetWindowThreadProcessId(GetForegroundWindow, PidFocus);
@@ -273,7 +273,7 @@ GetWindowThreadProcessId(GetConsoleWindow, PidConsole);
 IsFocus:=PidFocus = PidConsole;
 end;
 
-Function Regex(str, reg: ansistring): boolean;
+Function Regex(str, reg: ansistring): bool;
 var expr: TRegExpr;
 begin
 expr:=TRegExpr.Create;
@@ -352,7 +352,7 @@ begin
 if (allow_copy = true) and (CtrlType = CTRL_C_EVENT) then CopyClip(num_res + dec_res);
 end;
 
-Function NewTerm: boolean;
+Function NewTerm: bool;
 var path: ansistring;
     proc: handle;
     pid: dword;
@@ -369,7 +369,7 @@ end;
 
 //============================ Check input ============================//
 
-Function Input(CharSet: TSysCharSet; chk_dec, chk_neg: boolean): ansistring;
+Function Input(CharSet: TSysCharSet; chk_dec, chk_neg: bool): ansistring;
 begin
 input:='';
 
@@ -424,13 +424,13 @@ repeat
   if (key = #27) then exit('');
 until (length(input) > 0) and (key = #13);
 
-if (chk_neg = negative = true) then delete(input, 1, 1);
+if (chk_neg = true) and (negative = true) then delete(input, 1, 1);
 
 if (input[1] = '.') then input:='0' + input;
 
 while (input[1] in ['0', '.']) and (input <> '0') and ((input[2] <> '.') or (decimal = false)) do delete(input, 1, 1);
 
-if (chk_dec = decimal = true) then
+if (chk_dec = true) and (decimal = true) then
   begin
   while (input <> '0') and (decimal = true) and (input[length(input)] in ['0', '.']) do
     begin
@@ -438,11 +438,11 @@ if (chk_dec = decimal = true) then
 
     delete(input, length(input), 1);
     end;
+
+  if (decimal = true) then sep:=ChrPos('.', input) else sep:=length(input) + 1;
   end;
 
-if (chk_neg = true) and (input = '0') then negative:=false;
-
-if (decimal = true) then sep:=ChrPos('.', input) else sep:=length(input) + 1;
+if (negative = true) and (input = '0') then negative:=false;
 end;
 
 //============================ Binary to Integer ============================//
@@ -535,8 +535,7 @@ end;
 //============================ Decimal to Binary ============================//
 
 Procedure DecToBin(dec_mul: ansistring);
-var show_loop: boolean = true;
-    compare: ansistring;
+var compare: ansistring;
     split: cardinal;
     limit: variant;
 begin
@@ -553,8 +552,6 @@ if (ask_trunc = true) then
   clear(0, pre_pos.y, Screen.x * (Screen.y - pre_pos.y), 0, pre_pos.y);
 
   write('Convert to binary:'#13#10, num_res);
-
-  show_loop:=false;
   end;
 
 write('.');
@@ -562,7 +559,7 @@ write('.');
 split:=abs(length(dec_mul) - ChrPos('1', ReverseString(IntToBin(dec_mul))) + 1); dec_res:='.';
 
 repeat
-  if (show_loop = true) then
+  if (ask_trunc = false) then
     begin
     if (compare = dec_mul) then break;
 
@@ -621,11 +618,11 @@ repeat
 
     Clear(pre_pos.x, pre_pos.y, Screen.x * 5, pre_pos.x, pre_pos.y);
 
-    if (show_loop = true) and (length(dec_res) - 1 >= split) then Color(Green);
+    if (ask_trunc = false) and (length(dec_res) - 1 >= split) then Color(Green);
     end;
-until (dec_mul = '') or (show_loop = false) and (length(dec_res) - 1 = limit);
+until (dec_mul = '') or (ask_trunc = true) and (length(dec_res) - 1 = limit);
 
-if (show_loop = true) and (dec_mul <> '') then
+if (ask_trunc = false) and (dec_mul <> '') then
   begin
   writeln(Color(White), '...');
 
