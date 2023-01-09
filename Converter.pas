@@ -4,8 +4,8 @@ uses jwapsapi, keyboard, regexpr, strutils, sysutils, windows;
 
 const Div_even  : array [0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
       Div_odd   : array [0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
-      Mul_small : array [0..9] of char = ('0', '2', '4', '6', '8', '0', '2', '4', '6', '8');
       Mul_big   : array [0..9] of char = ('1', '3', '5', '7', '9', '1', '3', '5', '7', '9');
+      Mul_small : array [0..9] of char = ('0', '2', '4', '6', '8', '0', '2', '4', '6', '8');
       Green     = $2;
       Red       = $4;
       White     = $7;
@@ -406,17 +406,12 @@ repeat
 
   if (length(input) > 0) and (key = #8) then
     begin
-    if (Cursor.x = 0) then
-      begin
-      GotoXY(Screen.x - 1, Cursor.y - 1);
-      write(' ');
-      GotoXY(Screen.x - 1, Cursor.y - 1);
-      end
+    if (Cursor.x > 0) then write(#8, ' ', #8)
 
     else begin
-      GotoXY(Cursor.x - 1, Cursor.y);
+      GotoXY(Screen.x - 1, Cursor.y - 1);
       write(' ');
-      GotoXY(Cursor.x - 1, Cursor.y);
+      GotoXY(Screen.x - 1, Cursor.y - 1);
       end;
 
     if (input[length(input)] = '.') then decimal:=false;
@@ -492,16 +487,9 @@ for i:=sep + 1 to length(s) do
 
     for u:=length(dec_sum) downto 1 do
       begin
-      if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem < 10) then
-        begin
-        dec_res:=IntToChr(ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem) + dec_res;
-        remem:=0;
-        end
+      dec_res:=IntToChr((ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem) mod 10) + dec_res;
 
-      else begin
-        dec_res:=IntToChr((ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem) mod 10) + dec_res;
-        remem:=1;
-        end;
+      if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem < 10) then remem:=0 else remem:=1;
       end;
     end;
 
@@ -694,6 +682,7 @@ write(Color(White), '  _______________________________________________________'#
 write(Color(White), '      Main options:                                      '#13#10#13#10);
 
 write(Color(White), '  [1] Decimal to Binary                                        '#13#10);
+
 write(Color(White), '  [2] Binary to Decimal                                        '#13#10);
 
 write(Color(White), '  _______________________________________________________'#13#10#13#10);
@@ -796,9 +785,9 @@ repeat
 
            write(Color(Yellow), 'Tip: ');
 
-           write(Color(White), 'The longer the decimal, the longer it takes to calculate, you can always pause the converter with the ESC key');
+           write(Color(White), 'Longer decimals take longer to calculate, you can always pause the converter with the ESC key');
 
-           GoToXY(Cursor.x - 65, Cursor.y - 15);
+           GoToXY(Cursor.x - 48, Cursor.y - 15);
            end
 
          else begin
@@ -810,7 +799,7 @@ repeat
 
            write(Color(White), 'For good accuracy I recommend choosing at least 20 digits');
 
-           GoToXY(Cursor.x - 13, Cursor.y - 15);
+           GoToXY(Cursor.x - 12, Cursor.y - 15);
            end;
          end;
 
@@ -830,7 +819,7 @@ if (NewTerm = true) then
   begin
   write(Color(Red), 'Attention: ');
 
-  write(Color(White), 'Seem like you''re running this program with the new Microsoft Terminal. Since there are many errors that can be caused in this new Terminal, I recommend you to use the default terminal by running this program as administrator');
+  write(Color(White), 'I recommend using the default terminal to avoid some bugs by running this program as administrator.');
 
   repeat until (readkey <> ''); halt;
   end;
