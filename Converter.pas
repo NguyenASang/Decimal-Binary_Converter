@@ -278,7 +278,7 @@ for i:=1 to sep - 1 do
   BinToInt[u]:=IntToChr(ChrToInt(BinToInt[u]) + ChrToInt(s[i]));
   end;
 
-delete(BinToInt, length(BinToInt), 1);
+delete(BinToInt, u + 1, 1);
 
 if (negative = true) then BinToInt:='-' + BinToInt;
 end;
@@ -369,7 +369,7 @@ if (ask_trunc = true) then
 
 write('.');
 
-split:=abs(length(dec_mul) - pos('1', ReverseString(IntToBin(dec_mul))) + 1);
+split:=abs(length(dec_mul) - pos('1', ReverseString(IntToBin(dec_mul))) + 1); dec_res:='.';
 
 repeat
   if (ask_trunc = false) then
@@ -635,7 +635,7 @@ if (NewTerm = true) then
   end;
 
 repeat
-  allow_copy:=false;
+  allow_copy:=false; decimal:=false; negative:=false;
 
   Welcome_screen;
 until (false);
