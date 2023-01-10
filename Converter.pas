@@ -188,11 +188,6 @@ Function Input(CharSet: TSysCharSet; chk_dec, chk_neg: bool): ansistring;
 begin
 input:='';
 
-if (chk_dec = chk_neg = true) then
-  begin
-  decimal:=false; negative:=false;
-  end;
-
 repeat
   key:=readkey;
 
@@ -253,11 +248,14 @@ if (chk_dec = true) and (decimal = true) then
 
     delete(input, length(input), 1);
     end;
-
-  if (decimal = true) then sep:=pos('.', input) else sep:=length(input) + 1;
   end;
 
 if (negative = true) and (input = '0') then negative:=false;
+
+if (chk_dec = true) and (chk_neg = true) then
+  begin
+  if (decimal = true) then sep:=pos('.', input) else sep:=length(input) + 1;
+  end;
 end;
 
 //============================ Binary to Integer ============================//
@@ -298,7 +296,7 @@ for i:=sep + 1 to length(s) do
   if (s[i] = '1') then
     begin
     remem:=0;
-    dec_sum:=dec_res + dupestring('0', length(div_res) - length(dec_sum)); dec_res:='';
+    dec_sum:=dec_res + StringOfChar('0', length(div_res) - length(dec_sum)); dec_res:='';
 
     for u:=length(dec_sum) downto 1 do
       begin
@@ -371,7 +369,7 @@ if (ask_trunc = true) then
 
 write('.');
 
-split:=abs(length(dec_mul) - pos('1', ReverseString(IntToBin(dec_mul))) + 1); dec_res:='.';
+split:=abs(length(dec_mul) - pos('1', ReverseString(IntToBin(dec_mul))) + 1);
 
 repeat
   if (ask_trunc = false) then
