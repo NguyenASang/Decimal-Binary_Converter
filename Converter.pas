@@ -45,6 +45,9 @@ begin
 InitKeyBoard;
 k:=TranslateKeyEvent(GetKeyEvent);
 Readkey:=GetKeyEventChar(k);
+
+// Catch Ctrl + V 
+if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then readkey:=#22;
 DoneKeyBoard;
 end;
 
@@ -184,14 +187,14 @@ end;
 
 //============================ Check input ============================//
 
-Function Input(CharSet: TSysCharSet; chk_dec, chk_neg: bool): ansistring;
+Function Input(CharSet: TSysCharSet; chk_spec: bool): ansistring;
 begin
 input:='';
 
 repeat
   key:=readkey;
 
-  if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then
+  if (key = #22) then
     begin
     i:=length(input);
     input:=input + PasteClip;
@@ -202,8 +205,8 @@ repeat
 
     if (negative = false) and (pos('-', input) > 0) then negative:=true;
     end;
-                          //===== Prevent Ctrl + V from being treated as normal input =====//
-  if (key in CharSet) and (GetAsyncKeyState(VK_CONTROL) >= 0) and (GetAsyncKeyState(86) >= 0) or (key = '-') and (chk_neg = true) and (length(input) = 0) or (key = '.') and (chk_dec = true) and (decimal = false) then
+
+  if (key in CharSet) or (chk_spec = true) and ((key = '-')  and (length(input) = 0) or (key = '.') and (decimal = false)) then
     begin
     if (key = '-') then negative:=true;
 
@@ -214,7 +217,7 @@ repeat
     write(key);
     end;
 
-  if (length(input) > 0) and (key = #8) then
+  if (key = #8) and (length(input) > 0) then
     begin
     if (Cursor.x > 0) then write(#8, ' ', #8)
 
@@ -234,13 +237,13 @@ repeat
   if (key = #27) then exit('');
 until (length(input) > 0) and (key = #13);
 
-if (chk_neg = true) and (negative = true) then delete(input, 1, 1);
+if (chk_spec = true) and (negative = true) then delete(input, 1, 1);
 
 if (input[1] = '.') then input:='0' + input;
 
 while (input[1] in ['0', '.']) and (input <> '0') and ((input[2] <> '.') or (decimal = false)) do delete(input, 1, 1);
 
-if (chk_dec = true) and (decimal = true) then
+if (chk_spec = true) and (decimal = true) then
   begin
   while (input <> '0') and (decimal = true) and (input[length(input)] in ['0', '.']) do
     begin
@@ -252,7 +255,7 @@ if (chk_dec = true) and (decimal = true) then
 
 if (negative = true) and (input = '0') then negative:=false;
 
-if (chk_dec = true) and (chk_neg = true) then
+if (chk_spec = true) then
   begin
   if (decimal = true) then sep:=pos('.', input) else sep:=length(input) + 1;
   end;
@@ -360,7 +363,7 @@ if (ask_trunc = true) then
 
   writeln('How many digits do you want to display ?');
 
-  limit:=Input(['0'..'9'], false, false);
+  limit:=Input(['0'..'9'], false);
 
   clear(0, pre_pos.y, Screen.x * (Screen.y - pre_pos.y), 0, pre_pos.y);
 
@@ -385,12 +388,12 @@ repeat
 
   if (dec_mul[1] in ['5'..'9']) then
     begin
-    write('1');
+    write(1);
     dec_res:=dec_res + '1';
     end
 
   else begin
-    write('0');
+    write(0);
     dec_res:=dec_res + '0';
     end;
 
@@ -483,7 +486,7 @@ end;
 
 Procedure Welcome_screen;
 begin
-clear(0, 0, Screen.x * Screen.y, 0, 0);
+Clear(0, 0, Screen.x * Screen.y, 0, 0);
 
 //This design is inspired of https://github.com/abbodi1406/KMS_VL_ALL_AIO
 
@@ -529,7 +532,7 @@ repeat
 
          write(Color(White), 'Enter decimal to convert: ');
 
-         s:=Input(['0'..'9'], true, true);
+         s:=Input(['0'..'9'], true);
 
          if (s = '') then break;
 
@@ -551,7 +554,7 @@ repeat
 
          write(Color(White), 'Enter binary to convert: ');
 
-         s:=Input(['0', '1'], true, true);
+         s:=Input(['0', '1'], true);
 
          if (s = '') then break;
 
