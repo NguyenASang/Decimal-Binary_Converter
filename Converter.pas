@@ -46,7 +46,7 @@ InitKeyBoard;
 k:=TranslateKeyEvent(GetKeyEvent);
 Readkey:=GetKeyEventChar(k);
 
-// Catch Ctrl + V 
+// Catch Ctrl + V
 if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then readkey:=#22;
 DoneKeyBoard;
 end;
@@ -206,7 +206,7 @@ repeat
     if (negative = false) and (pos('-', input) > 0) then negative:=true;
     end;
 
-  if (key in CharSet) or (chk_spec = true) and ((key = '-')  and (length(input) = 0) or (key = '.') and (decimal = false)) then
+  if (key in CharSet) or (chk_spec = true) and ((key = '-') and (length(input) = 0) or (key = '.') and (decimal = false)) then
     begin
     if (key = '-') then negative:=true;
 
@@ -484,7 +484,7 @@ else begin
   end;
 end;
 
-Procedure Welcome_screen;
+Procedure Main_menu;
 begin
 Clear(0, 0, Screen.x * Screen.y, 0, 0);
 
@@ -639,7 +639,8 @@ if (NewTerm = true) then
 
 repeat
   allow_copy:=false; decimal:=false; negative:=false;
+  num_res:=''; dec_res:='';
 
-  Welcome_screen;
+  Main_menu;
 until (false);
 end.
