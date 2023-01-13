@@ -5,7 +5,7 @@ A high precision Decimal/Binary converter written in [***Pascal language***](htt
 - User - friendly interface
 - ***Unlimited*** input, ***quick*** calculation and ***high*** precision 
 - Highlight the ***repeating part*** for special cases when converting to binary
-- Automatically remove unnecessary parts in output and input (Eg: 0001.100 &#8594; 1.1)
+- Automatically remove leading zeros from input (Eg: 0001.100 &#8594; 1.1)
 
 ## Compatibility
 
