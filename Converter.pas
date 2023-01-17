@@ -11,7 +11,7 @@ const Div_even  : array [0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3'
       White     = $7;
       Yellow    = $E;
 
-var allow_copy, auto_copy, ask_trunc, decimal, negative: bool;
+var auto_copy, ask_trunc, decimal, negative: bool;
     s, num_res, dec_res: ansistring;
     i, u, sep: cardinal;
     pre_pos: coord;
@@ -26,7 +26,7 @@ GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 Cursor:=pos.dwCursorPosition;
 end;
 
-Procedure GoToXY(x, y: cardinal);
+Procedure GotoXY(x, y: cardinal);
 var pos: coord;
 begin
 pos.x:=x; pos.y:=y;
@@ -46,7 +46,7 @@ InitKeyBoard;
 k:=TranslateKeyEvent(GetKeyEvent);
 Readkey:=GetKeyEventChar(k);
 
-// Catch Ctrl + V
+//Catch Ctrl + V
 if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then readkey:=#22;
 DoneKeyBoard;
 end;
@@ -70,8 +70,6 @@ end;
 
 //=========================== Utilities functions ===========================//
 
-//Both functions below are inspired by @svecon's code
-
 Function ChrToInt(c: char): byte; assembler;
 asm
 sub al, '0'
@@ -91,17 +89,6 @@ GetWindowThreadProcessId(GetConsoleWindow, PidConsole);
 IsFocus:=PidFocus = PidConsole;
 end;
 
-Function Regex(str, reg: ansistring): bool;
-var expr: TRegExpr;
-begin
-expr:=TRegExpr.Create;
-expr.Expression:=reg;
-
-Regex:=expr.Exec(str);
-
-expr.Free;
-end;
-
 Function RPosSet(CharSet: TSysCharSet; str: ansistring): cardinal;
 begin
 for RPosSet:=length(str) downto 1 do
@@ -112,32 +99,64 @@ for RPosSet:=length(str) downto 1 do
 RPosSet:=0;
 end;
 
-Function PasteClip: ansistring;
-var data: handle;
-    str: pchar;
+Function Format(str: ansistring; CharSet: TSysCharSet; chk_spec, is_clip: bool): ansistring;
 begin
-OpenClipboard(0);
-  data:=GetClipboardData(CF_TEXT);
-  str:=GlobalLock(data);
-  GlobalUnlock(data);
-CloseClipboard;
-
-if (Regex(strpas(str), '^[-]?((\d+(\.\d*)?)|(\.\d+))$') = false) or (pos('.', strpas(str)) > 0) and (decimal = true) or (pos('-', strpas(str)) > 0) and ((negative = true) or (length(s) > 0)) then
+if (is_clip = true) then
   begin
-  pre_pos:=Cursor;
+  while (chk_spec = false) and (pos('-', str) > 0) or (NPos('-', str, 2) > 0) do delete(str, RPos('-', str), 1);
 
-  write(Color(Red), #13#10#13#10'Warning: ');
+  while (chk_spec = false) and (pos('.', str) > 0) or (NPos('.', str, 2) > 0) do delete(str, RPos('.', str), 1);
 
-  write(Color(White), 'Your clipboard contains invalid characters');
+  while (CharSet = ['0', '1']) and (PosSet(['2'..'9'], str) > 0) do delete(str, PosSet(['2'..'9'], str), 1);
 
-  repeat key:=readkey until (key <> '');
-
-  Clear(pre_pos.x, pre_pos.y, Screen.x * 3, pre_pos.x, pre_pos.y);
-
-  exit('');
+  exit(str);
   end;
 
-PasteClip:=strpas(str);
+if (chk_spec = true) and (negative = true) then delete(str, 1, 1);
+
+if (str = '') or (str[1] = '.') then str:='0' + str;
+
+while (str <> '') and ((str[1] in ['0', '.']) and (str <> '0') and ((str[2] <> '.') or (decimal = false))) do delete(str, 1, 1);
+
+if (negative = true) and (str[1] = '0') then negative:=false;
+
+if (chk_spec = true) and (decimal = true) then
+  begin
+  while (str <> '0') and (decimal = true) and (str[length(str)] in ['0', '.']) do
+    begin
+    if (str[length(str)] = '.') then decimal:=false;
+
+    delete(str, length(str), 1);
+    end;
+  end;
+
+Format:=str;
+end;
+
+Function PasteClip(CharSet: TSysCharSet; chk_spec: bool): ansistring;
+var data: handle;
+    expr: TRegExpr;
+begin
+OpenClipboard(0);
+data:=GetClipboardData(CF_TEXT);
+PasteClip:=strpas(GlobalLock(data));
+GlobalUnlock(data);
+CloseClipboard;
+
+expr:=TRegExpr.Create;
+expr.Expression:='[^\d\.-]+';
+
+PasteClip:=Format(ReplaceRegExpr(expr.Expression, PasteClip, '', true), CharSet, chk_spec, true);
+
+expr.Free;
+
+if (chk_spec = true) then
+  begin
+  decimal:=pos('.', PasteClip) > 0;
+  negative:=pos('-', PasteClip) > 0;
+  end;
+
+write(PasteClip);
 end;
 
 Procedure CopyClip(text: ansistring);
@@ -145,7 +164,6 @@ var PchData, StrData: pchar;
     data: handle;
 begin
 StrData:=Pchar(text);
-
 data:=GlobalAlloc(GMEM_MOVEABLE, length(StrData) + 1);
 PchData:=GlobalLock(data);
 strcopy(PchData, LPCSTR(StrData));
@@ -167,7 +185,7 @@ end;
 
 Function HandlerRoutine(CtrlType: dword): bool; stdcall;
 begin
-if (allow_copy = true) and (CtrlType = CTRL_C_EVENT) then CopyClip(num_res + dec_res);
+if (num_res <> '') and (CtrlType = CTRL_C_EVENT) then CopyClip(num_res + dec_res);
 end;
 
 Function NewTerm: bool;
@@ -185,7 +203,7 @@ GetProcessImageFileName(proc, Pchar(path), MAX_PATH);
 NewTerm:=pos('WindowsTerminal.exe', path) > 0;
 end;
 
-//============================ Check input ============================//
+//=============================== Check input ===============================//
 
 Function Input(CharSet: TSysCharSet; chk_spec: bool): ansistring;
 begin
@@ -196,17 +214,10 @@ repeat
 
   if (key = #22) then
     begin
-    i:=length(input);
-    input:=input + PasteClip;
-
-    write(Copy(input, i + 1, length(input)));
-
-    if (decimal = false) and (pos('.', input) > 0) then decimal:=true;
-
-    if (negative = false) and (pos('-', input) > 0) then negative:=true;
+    input:=input + PasteClip(CharSet, chk_spec);
     end;
 
-  if (key in CharSet) or (chk_spec = true) and ((key = '-') and (length(input) = 0) or (key = '.') and (decimal = false)) then
+  if (key in CharSet) or (chk_spec = true) and ((key = '-') and (input = '') or (key = '.') and (decimal = false)) then
     begin
     if (key = '-') then negative:=true;
 
@@ -237,28 +248,9 @@ repeat
   if (key = #27) then exit('');
 until (length(input) > 0) and (key = #13);
 
-if (chk_spec = true) and (negative = true) then delete(input, 1, 1);
+input:=Format(input, CharSet, chk_spec, false);
 
-if (input[1] = '.') then input:='0' + input;
-
-while (input[1] in ['0', '.']) and (input <> '0') and ((input[2] <> '.') or (decimal = false)) do delete(input, 1, 1);
-
-if (chk_spec = true) and (decimal = true) then
-  begin
-  while (input <> '0') and (decimal = true) and (input[length(input)] in ['0', '.']) do
-    begin
-    if (input[length(input)] = '.') then decimal:=false;
-
-    delete(input, length(input), 1);
-    end;
-  end;
-
-if (negative = true) and (input = '0') then negative:=false;
-
-if (chk_spec = true) then
-  begin
-  if (decimal = true) then sep:=pos('.', input) else sep:=length(input) + 1;
-  end;
+if (chk_spec = true) then if (decimal = true) then sep:=pos('.', input) else sep:=length(input) + 1;
 end;
 
 //============================ Binary to Integer ============================//
@@ -309,11 +301,11 @@ for i:=sep + 1 to length(s) do
       end;
     end;
 
-  div_res:='0' + div_res + '0';
+  div_res:='0' + div_res + '5';
 
-  for u:=length(div_res) downto 2 do
+  for u:=length(div_res) - 1 downto 2 do
     begin
-    if (div_res[u - 1] in ['1', '3', '5', '7', '9'])  then div_res[u]:=Div_odd[ChrToInt(div_res[u])]
+    if (div_res[u - 1] in ['1', '3', '5', '7', '9']) then div_res[u]:=Div_odd[ChrToInt(div_res[u])]
 
     else div_res[u]:=Div_even[ChrToInt(div_res[u])];
     end;
@@ -357,15 +349,15 @@ var compare: ansistring;
 begin
 if (ask_trunc = true) then
   begin
-  clear(0, Cursor.y - 1, Screen.x, 0, Cursor.y - 1);
+  Clear(0, Cursor.y - 1, Screen.x, 0, Cursor.y - 1);
 
   pre_pos:=Cursor;
 
   writeln('How many digits do you want to display ?');
 
-  limit:=Input(['0'..'9'], false);
+  limit:=Format(Input(['0'..'9'], false), ['0'..'9'], false, false);
 
-  clear(0, pre_pos.y, Screen.x * (Screen.y - pre_pos.y), 0, pre_pos.y);
+  Clear(0, pre_pos.y, Screen.x * (Screen.y - pre_pos.y), 0, pre_pos.y);
 
   write('Convert to binary:'#13#10, num_res);
   end;
@@ -406,7 +398,7 @@ repeat
     else dec_mul[i]:=Mul_small[ChrToInt(dec_mul[i])];
     end;
 
-  delete(dec_mul, RPosSet(['1'..'9'], dec_mul) + 1, length(dec_mul));
+  delete(dec_mul, RPosSet(['1'..'9'], dec_mul) + 1, i);
 
   if (GetAsyncKeyState(27) < 0) and (IsFocus = true) then
     begin
@@ -436,9 +428,9 @@ repeat
 
     if (ask_trunc = false) and (length(dec_res) - 1 >= split) then Color(Green);
     end;
-until (dec_mul = '') or (ask_trunc = true) and (length(dec_res) - 1 = limit);
+until (dec_mul = '0') or (ask_trunc = true) and (length(dec_res) - 1 = limit);
 
-if (ask_trunc = false) and (dec_mul <> '') then
+if (ask_trunc = false) and (dec_mul <> '0') then
   begin
   writeln(Color(White), '...');
 
@@ -454,8 +446,6 @@ end;
 
 Procedure End_screen;
 begin
-allow_copy:=true;
-
 write(Color(Yellow), #13#10#13#10'Tip: ');
 
 write(Color(White), 'You can copy result by pressing Ctrl + C'#13#10#13#10'Press backspace to ');
@@ -468,20 +458,13 @@ write(Color(Red), 'return ');
 
 write(Color(White), 'to main menu');
 
-if (auto_copy = false) then
-  begin
-  repeat
-    key:=readkey;
+if (auto_copy = true) then CopyClip(num_res + dec_res);
 
-    if (key = #3) then CopyClip(num_res + dec_res);
-  until (key in [#27, #8]);
-  end
+repeat
+  key:=readkey;
 
-else begin
-  CopyClip(num_res + dec_res);
-
-  repeat key:=readkey until (key in [#27, #8]);
-  end;
+  if (key = #3) then CopyClip(num_res + dec_res);
+until (key in [#27, #8]);
 end;
 
 Procedure Main_menu;
@@ -512,7 +495,7 @@ if (ask_trunc = true) then writeln(Color(Green), '[Yes]') else writeln('[Nah]');
 
 write(Color(White), '  _______________________________________________________'#13#10#13#10);
 
-write(Color(White), '  Press key to choose options or Esc key to Exit: ');
+write(Color(White), '  Press key to choose option or Esc key to Exit: ');
 
 repeat
   if (key = #8) then
@@ -574,19 +557,19 @@ repeat
     '3': begin
          Clear(0, 29, Screen.x, Cursor.x, Cursor.y);
 
-         GotoXY(Cursor.x + 2, Cursor.y - 4);
+         GotoXY(Cursor.x + 3, Cursor.y - 4);
 
          auto_copy:=not auto_copy;
 
          if (auto_copy = false) then write(Color(Red), '[Nah]') else write(Color(Green), '[Yes]');
 
-         GotoXY(Cursor.x - 7, Cursor.y + 4);
+         GotoXY(Cursor.x - 8, Cursor.y + 4);
          end;
 
     '4': begin
          Clear(0, 29, Screen.x, Cursor.x, Cursor.y);
 
-         GotoXY(Cursor.x + 2, Cursor.y - 3);
+         GotoXY(Cursor.x + 3, Cursor.y - 3);
 
          ask_trunc:=not ask_trunc;
 
@@ -600,7 +583,7 @@ repeat
 
            write(Color(White), 'Longer decimals take longer to calculate, you can always pause the converter with the ESC key');
 
-           GoToXY(Cursor.x - 48, Cursor.y - 15);
+           GotoXY(Cursor.x - 49, Cursor.y - 15);
            end
 
          else begin
@@ -612,7 +595,7 @@ repeat
 
            write(Color(White), 'For good accuracy I recommend choosing at least 20 digits');
 
-           GoToXY(Cursor.x - 12, Cursor.y - 15);
+           GotoXY(Cursor.x - 13, Cursor.y - 15);
            end;
          end;
 
@@ -623,10 +606,10 @@ repeat
 until (false);
 end;
 
-//============================ Main part ============================//
+//================================ Main part ================================//
 
 begin
-SetconsoleCtrlHandler(@handlerRoutine, TRUE);
+SetconsoleCtrlHandler(@handlerRoutine, true);
 
 if (NewTerm = true) then
   begin
@@ -638,7 +621,7 @@ if (NewTerm = true) then
   end;
 
 repeat
-  allow_copy:=false; decimal:=false; negative:=false;
+  decimal:=false; negative:=false;
   num_res:=''; dec_res:='';
 
   Main_menu;
