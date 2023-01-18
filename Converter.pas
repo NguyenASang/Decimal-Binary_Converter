@@ -101,28 +101,28 @@ end;
 
 Function Format(str: ansistring; CharSet: TSysCharSet; chk_spec, is_clip: bool): ansistring;
 begin
-if (is_clip = true) then
+if (is_clip) then
   begin
-  while ((chk_spec = false) or (negative = true)) and (pos('-', str) > 0) or (Rpos('-', str) > 1) do delete(str, RPos('-', str), 1);
+  while ((not chk_spec) or (negative) or (decimal)) and (pos('-', str) > 0) or (Rpos('-', str) > 1) do delete(str, RPos('-', str), 1);
 
-  while ((chk_spec = false) or (decimal = true)) and (pos('.', str) > 0) or (NPos('.', str, 2) > 0) do delete(str, RPos('.', str), 1);
+  while ((not chk_spec) or (decimal)) and (pos('.', str) > 0) or (NPos('.', str, 2) > 0) do delete(str, RPos('.', str), 1);
 
   while (CharSet = ['0', '1']) and (PosSet(['2'..'9'], str) > 0) do delete(str, PosSet(['2'..'9'], str), 1);
 
   exit(str);
   end;
 
-if (chk_spec = true) and (negative = true) then delete(str, 1, 1);
+if (chk_spec) and (negative) then delete(str, 1, 1);
 
 if (str = '') or (str[1] = '.') then str:='0' + str;
 
-while (str <> '') and ((str[1] in ['0', '.']) and (str <> '0') and ((str[2] <> '.') or (decimal = false))) do delete(str, 1, 1);
+while (str <> '') and ((str[1] in ['0', '.']) and (str <> '0') and ((str[2] <> '.') or (not decimal))) do delete(str, 1, 1);
 
-if (negative = true) and (str[1] = '0') then negative:=false;
+if (negative) and (str[1] = '0') then negative:=false;
 
-if (chk_spec = true) and (decimal = true) then
+if (chk_spec) and (decimal) then
   begin
-  while (str <> '0') and (decimal = true) and (str[length(str)] in ['0', '.']) do
+  while (str <> '0') and (decimal) and (str[length(str)] in ['0', '.']) do
     begin
     if (str[length(str)] = '.') then decimal:=false;
 
@@ -214,7 +214,7 @@ repeat
     negative:=pos('-', input) > 0;
     end;
 
-  if (key in CharSet) or (chk_spec = true) and ((key = '-') and (input = '') or (key = '.') and (decimal = false)) then
+  if (key in CharSet) or (chk_spec) and ((key = '-') and (input = '') or (key = '.') and (not decimal)) then
     begin
     if (key = '-') then negative:=true;
 
@@ -247,7 +247,7 @@ until (length(input) > 0) and (key = #13);
 
 input:=Format(input, CharSet, chk_spec, false);
 
-if (chk_spec = true) then if (decimal = true) then sep:=pos('.', input) else sep:=length(input) + 1;
+if (chk_spec) then if (decimal) then sep:=pos('.', input) else sep:=length(input) + 1;
 end;
 
 //============================ Binary to Integer ============================//
@@ -272,7 +272,7 @@ for i:=1 to sep - 1 do
 
 delete(BinToInt, u + 1, 1);
 
-if (negative = true) then BinToInt:='-' + BinToInt;
+if (negative) then BinToInt:='-' + BinToInt;
 end;
 
 //============================ Binary to Decimal ============================//
@@ -334,7 +334,7 @@ repeat
   if (num_div[2] = '0') then delete(num_div, 1, 1);
 until (num_div = '0');
 
-if (negative = true) then IntToBin:='-' + IntToBin;
+if (negative) then IntToBin:='-' + IntToBin;
 end;
 
 //============================ Decimal to Binary ============================//
@@ -344,7 +344,7 @@ var compare: ansistring;
     split: cardinal;
     limit: variant;
 begin
-if (ask_trunc = true) then
+if (ask_trunc) then
   begin
   Clear(0, Cursor.y - 1, Screen.x, 0, Cursor.y - 1);
 
@@ -364,7 +364,7 @@ if (limit = '0') then exit else write('.');
 split:=abs(length(dec_mul) - pos('1', ReverseString(IntToBin(dec_mul))) + 1); dec_res:='.';
 
 repeat
-  if (ask_trunc = false) then
+  if (not ask_trunc) then
     begin
     if (compare = dec_mul) then break;
 
@@ -397,7 +397,7 @@ repeat
 
   delete(dec_mul, RPosSet(['1'..'9'], dec_mul) + 1, i);
 
-  if (GetAsyncKeyState(27) < 0) and (IsFocus = true) then
+  if (GetAsyncKeyState(27) < 0) and (IsFocus) then
     begin
     pre_pos:=Cursor;
 
@@ -423,11 +423,11 @@ repeat
 
     Clear(pre_pos.x, pre_pos.y, Screen.x * 5, pre_pos.x, pre_pos.y);
 
-    if (ask_trunc = false) and (length(dec_res) - 1 >= split) then Color(Green);
+    if (not ask_trunc) and (length(dec_res) - 1 >= split) then Color(Green);
     end;
-until (dec_mul = '0') or (ask_trunc = true) and (length(dec_res) - 1 = limit);
+until (dec_mul = '0') or (ask_trunc) and (length(dec_res) - 1 = limit);
 
-if (ask_trunc = false) and (dec_mul <> '0') then
+if (not ask_trunc) and (dec_mul <> '0') then
   begin
   writeln(Color(White), '...');
 
@@ -455,7 +455,7 @@ write(Color(Red), 'return ');
 
 write(Color(White), 'to main menu');
 
-if (auto_copy = true) then CopyClip(num_res + dec_res);
+if (auto_copy) then CopyClip(num_res + dec_res);
 
 repeat
   key:=readkey;
@@ -484,11 +484,11 @@ write(Color(White), '      Configuration:                                     '#
 
 write(Color(White), '  [3] Auto copy result to clipboard                 ');
 
-if (auto_copy = true) then writeln(Color(Green), '[Yes]') else writeln('[Nah]');
+if (auto_copy) then writeln(Color(Green), '[Yes]') else writeln('[Nah]');
 
 write(Color(White), '  [4] Ask for truncating (Decimal to Binary)        ');
 
-if (ask_trunc = true) then writeln(Color(Green), '[Yes]') else writeln('[Nah]');
+if (ask_trunc) then writeln(Color(Green), '[Yes]') else writeln('[Nah]');
 
 write(Color(White), '  _______________________________________________________'#13#10#13#10);
 
@@ -520,9 +520,9 @@ repeat
 
          num_res:=IntToBin(Copy(s, 1, sep - 1));
 
-         if (ask_trunc = false) or (decimal = false) then write(num_res);
+         if (not ask_trunc) or (not decimal) then write(num_res);
 
-         if (decimal = true) then DecToBin(Copy(s, sep + 1, length(s)));
+         if (decimal) then DecToBin(Copy(s, sep + 1, length(s)));
 
          End_Screen;
 
@@ -544,7 +544,7 @@ repeat
 
          write(num_res);
 
-         if (decimal = true) then BinToDec;
+         if (decimal) then BinToDec;
 
          End_Screen;
 
@@ -558,7 +558,7 @@ repeat
 
          auto_copy:=not auto_copy;
 
-         if (auto_copy = false) then write(Color(Red), '[Nah]') else write(Color(Green), '[Yes]');
+         if (not auto_copy) then write(Color(Red), '[Nah]') else write(Color(Green), '[Yes]');
 
          GotoXY(Cursor.x - 8, Cursor.y + 4);
          end;
@@ -570,7 +570,7 @@ repeat
 
          ask_trunc:=not ask_trunc;
 
-         if (ask_trunc = false) then
+         if (not ask_trunc) then
            begin
            write(Color(Red), '[Nah]');
 
@@ -608,7 +608,7 @@ end;
 begin
 SetconsoleCtrlHandler(@handlerRoutine, true);
 
-if (NewTerm = true) then
+if (NewTerm) then
   begin
   write(Color(Red), 'Attention: ');
 
