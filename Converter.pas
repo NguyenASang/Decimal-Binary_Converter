@@ -103,9 +103,9 @@ Function Format(str: ansistring; CharSet: TSysCharSet; chk_spec, is_clip: bool):
 begin
 if (is_clip = true) then
   begin
-  while (chk_spec = false) and (pos('-', str) > 0) or (NPos('-', str, 2) > 0) do delete(str, RPos('-', str), 1);
+  while ((chk_spec = false) or (negative = true)) and (pos('-', str) > 0) or (Rpos('-', str) > 1) do delete(str, RPos('-', str), 1);
 
-  while (chk_spec = false) and (pos('.', str) > 0) or (NPos('.', str, 2) > 0) do delete(str, RPos('.', str), 1);
+  while ((chk_spec = false) or (decimal = true)) and (pos('.', str) > 0) or (NPos('.', str, 2) > 0) do delete(str, RPos('.', str), 1);
 
   while (CharSet = ['0', '1']) and (PosSet(['2'..'9'], str) > 0) do delete(str, PosSet(['2'..'9'], str), 1);
 
@@ -149,12 +149,6 @@ expr.Expression:='[^\d\.-]+';
 PasteClip:=Format(ReplaceRegExpr(expr.Expression, PasteClip, '', true), CharSet, chk_spec, true);
 
 expr.Free;
-
-if (chk_spec = true) then
-  begin
-  decimal:=pos('.', PasteClip) > 0;
-  negative:=pos('-', PasteClip) > 0;
-  end;
 
 write(PasteClip);
 end;
@@ -215,6 +209,9 @@ repeat
   if (key = #22) then
     begin
     input:=input + PasteClip(CharSet, chk_spec);
+
+    decimal:=pos('.', input) > 0;
+    negative:=pos('-', input) > 0;
     end;
 
   if (key in CharSet) or (chk_spec = true) and ((key = '-') and (input = '') or (key = '.') and (decimal = false)) then
@@ -362,7 +359,7 @@ if (ask_trunc = true) then
   write('Convert to binary:'#13#10, num_res);
   end;
 
-write('.');
+if (limit = '0') then exit else write('.');
 
 split:=abs(length(dec_mul) - pos('1', ReverseString(IntToBin(dec_mul))) + 1); dec_res:='.';
 
