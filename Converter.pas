@@ -14,7 +14,6 @@ const Div_even  : array [0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3'
 var auto_copy, ask_trunc, decimal, negative: bool;
     s, num_res, dec_res: ansistring;
     i, u, sep: cardinal;
-    pre_pos: coord;
     key: char;
 
 //====================== Alternative functions for Crt ======================//
@@ -99,11 +98,11 @@ for RPosSet:=length(str) downto 1 do
 RPosSet:=0;
 end;
 
-Function Format(str: ansistring; CharSet: TSysCharSet; chk_spec, is_clip: bool): ansistring;
+Function Format(str: ansistring; CharSet: TSysCharSet; chk_spec, is_clip, is_empty: bool): ansistring;
 begin
 if (is_clip) then
   begin
-  while ((not chk_spec) or (negative) or (decimal)) and (pos('-', str) > 0) or (Rpos('-', str) > 1) do delete(str, RPos('-', str), 1);
+  while ((not chk_spec) or (not is_empty)) and (pos('-', str) > 0) or (Rpos('-', str) > 1) do delete(str, RPos('-', str), 1);
 
   while ((not chk_spec) or (decimal)) and (pos('.', str) > 0) or (NPos('.', str, 2) > 0) do delete(str, RPos('.', str), 1);
 
@@ -133,7 +132,7 @@ if (chk_spec) and (decimal) then
 Format:=str;
 end;
 
-Function PasteClip(CharSet: TSysCharSet; chk_spec: bool): ansistring;
+Function PasteClip(CharSet: TSysCharSet; chk_spec, is_empty: bool): ansistring;
 var data: handle;
     expr: TRegExpr;
 begin
@@ -146,7 +145,7 @@ CloseClipboard;
 expr:=TRegExpr.Create;
 expr.Expression:='[^\d\.-]+';
 
-PasteClip:=Format(ReplaceRegExpr(expr.Expression, PasteClip, '', true), CharSet, chk_spec, true);
+PasteClip:=Format(ReplaceRegExpr(expr.Expression, PasteClip, '', true), CharSet, chk_spec, true, is_empty);
 
 expr.Free;
 
@@ -208,7 +207,7 @@ repeat
 
   if (key = #22) then
     begin
-    input:=input + PasteClip(CharSet, chk_spec);
+    input:=input + PasteClip(CharSet, chk_spec, length(input) = 0);
 
     decimal:=pos('.', input) > 0;
     negative:=pos('-', input) > 0;
@@ -245,7 +244,7 @@ repeat
   if (key = #27) then exit('');
 until (length(input) > 0) and (key = #13);
 
-input:=Format(input, CharSet, chk_spec, false);
+input:=Format(input, CharSet, chk_spec, false, false);
 
 if (chk_spec) then if (decimal) then sep:=pos('.', input) else sep:=length(input) + 1;
 end;
@@ -281,7 +280,7 @@ Procedure BinToDec;
 var div_res, dec_sum: ansistring;
     remem: byte;
 begin
-div_res:='5'; dec_res:='';
+div_res:='05';
 
 for i:=sep + 1 to length(s) do
   begin
@@ -298,7 +297,7 @@ for i:=sep + 1 to length(s) do
       end;
     end;
 
-  div_res:='0' + div_res + '5';
+  div_res:=div_res + '5';
 
   for u:=length(div_res) - 1 downto 2 do
     begin
@@ -306,9 +305,9 @@ for i:=sep + 1 to length(s) do
 
     else div_res[u]:=Div_even[ChrToInt(div_res[u])];
     end;
-
-  delete(div_res, 1, 1);
   end;
+
+delete(dec_res, 1, 1);
 
 dec_res:='.' + dec_res;
 
@@ -342,6 +341,7 @@ end;
 Procedure DecToBin(dec_mul: ansistring);
 var compare: ansistring;
     split: cardinal;
+    pre_pos: coord;
     limit: variant;
 begin
 if (ask_trunc) then
@@ -352,7 +352,7 @@ if (ask_trunc) then
 
   writeln('How many digits do you want to display ?');
 
-  limit:=Format(Input(['0'..'9'], false), ['0'..'9'], false, false);
+  limit:=Format(Input(['0'..'9'], false), ['0'..'9'], false, false, false);
 
   Clear(0, pre_pos.y, Screen.x * (Screen.y - pre_pos.y), 0, pre_pos.y);
 
