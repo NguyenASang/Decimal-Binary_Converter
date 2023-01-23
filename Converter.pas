@@ -1,11 +1,9 @@
-{$ASMMODE INTEL}
-
 uses jwapsapi, keyboard, regexpr, strutils, sysutils, windows;
 
-const Div_even  : array [0..9] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
-      Div_odd   : array [0..9] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
-      Mul_big   : array [0..9] of char = ('1', '3', '5', '7', '9', '1', '3', '5', '7', '9');
-      Mul_small : array [0..9] of char = ('0', '2', '4', '6', '8', '0', '2', '4', '6', '8');
+const Div_even  : array [48..57] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
+      Div_odd   : array [48..57] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
+      Mul_big   : array [48..57] of char = ('1', '3', '5', '7', '9', '1', '3', '5', '7', '9');
+      Mul_small : array [48..57] of char = ('0', '2', '4', '6', '8', '0', '2', '4', '6', '8');
       Green     = $2;
       Red       = $4;
       White     = $7;
@@ -69,16 +67,6 @@ end;
 
 //=========================== Utilities functions ===========================//
 
-Function ChrToInt(c: char): byte; assembler;
-asm
-sub al, '0'
-end;
-
-Function IntToChr(b: byte): char; assembler;
-asm
-add al, '0'
-end;
-
 Function IsFocus: bool;
 var PidConsole, PidFocus: dword;
 begin
@@ -133,8 +121,8 @@ Format:=str;
 end;
 
 Function PasteClip(CharSet: TSysCharSet; chk_spec, is_empty: bool): ansistring;
-var data: handle;
-    expr: TRegExpr;
+var expr: TRegExpr;
+    data: handle;
 begin
 OpenClipboard(0);
 data:=GetClipboardData(CF_TEXT);
@@ -142,12 +130,7 @@ PasteClip:=strpas(GlobalLock(data));
 GlobalUnlock(data);
 CloseClipboard;
 
-expr:=TRegExpr.Create;
-expr.Expression:='[^\d\.-]+';
-
-PasteClip:=Format(ReplaceRegExpr(expr.Expression, PasteClip, '', true), CharSet, chk_spec, true, is_empty);
-
-expr.Free;
+PasteClip:=Format(ReplaceRegExpr('[^\d\.-]+', PasteClip, '', true), CharSet, chk_spec, true, is_empty);
 
 write(PasteClip);
 end;
@@ -215,13 +198,12 @@ repeat
 
   if (key in CharSet) or (chk_spec) and ((key = '-') and (input = '') or (key = '.') and (not decimal)) then
     begin
-    if (key = '-') then negative:=true;
-
-    if (key = '.') then decimal:=true;
+    write(key);
 
     input:=input + key;
 
-    write(key);
+    negative:=(key = '-') or (negative);
+    decimal:=(key = '.') or (decimal);
     end;
 
   if (key = #8) and (length(input) > 0) then
@@ -231,7 +213,7 @@ repeat
     else begin
       GotoXY(Screen.x - 1, Cursor.y - 1);
       write(' ');
-      GotoXY(Screen.x - 1, Cursor.y - 1);
+      GotoXY(Screen.x - 1, Cursor.y);
       end;
 
     if (input[length(input)] = '.') then decimal:=false;
@@ -261,12 +243,12 @@ for i:=1 to sep - 1 do
 
   for u:=1 to length(BinToInt) - 1 do
     begin
-    if (BinToInt[u + 1] in ['5'..'9']) then BinToInt[u]:=Mul_big[ChrToInt(BinToInt[u])]
+    if (BinToInt[u + 1] in ['5'..'9']) then BinToInt[u]:=Mul_big[ord(BinToInt[u])]
 
-    else BinToInt[u]:=Mul_small[ChrToInt(BinToInt[u])];
+    else BinToInt[u]:=Mul_small[ord(BinToInt[u])];
     end;
 
-  BinToInt[u]:=IntToChr(ChrToInt(BinToInt[u]) + ChrToInt(s[i]));
+  BinToInt[u]:=char(ord(BinToInt[u]) - 48 + ord(s[i]));
   end;
 
 delete(BinToInt, u + 1, 1);
@@ -291,9 +273,9 @@ for i:=sep + 1 to length(s) do
 
     for u:=length(dec_sum) downto 1 do
       begin
-      dec_res:=IntToChr((ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem) mod 10) + dec_res;
+      dec_res:=char((ord(div_res[u]) - 48 + ord(dec_sum[u]) - 48 + remem) mod 10 + 48) + dec_res;
 
-      if (ChrToInt(div_res[u]) + ChrToInt(dec_sum[u]) + remem < 10) then remem:=0 else remem:=1;
+      remem:=byte(ord(dec_res[1]) - remem < ord(div_res[u]));
       end;
     end;
 
@@ -301,17 +283,15 @@ for i:=sep + 1 to length(s) do
 
   for u:=length(div_res) - 1 downto 2 do
     begin
-    if (div_res[u - 1] in ['1', '3', '5', '7', '9']) then div_res[u]:=Div_odd[ChrToInt(div_res[u])]
+    if (div_res[u - 1] in ['1', '3', '5', '7', '9']) then div_res[u]:=Div_odd[ord(div_res[u])]
 
-    else div_res[u]:=Div_even[ChrToInt(div_res[u])];
+    else div_res[u]:=Div_even[ord(div_res[u])];
     end;
   end;
 
-delete(dec_res, 1, 1);
+dec_res[1]:='.';
 
-dec_res:='.' + dec_res;
-
-write(dec_res)
+write(dec_res);
 end;
 
 //============================ Integer to Binary ============================//
@@ -321,16 +301,16 @@ begin
 num_div:='0' + num_div; IntToBin:='';
 
 repeat
-  IntToBin:=IntToChr(ChrToInt(num_div[length(num_div)]) mod 2) + IntToBin;
+  IntToBin:=char(ord(num_div[length(num_div)]) mod 2 + 48) + IntToBin;
 
   for i:=length(num_div) downto 2 do
     begin
-    if (num_div[i - 1] in ['1', '3', '5', '7', '9']) then num_div[i]:=Div_odd[ChrToInt(num_div[i])]
+    if (num_div[i - 1] in ['1', '3', '5', '7', '9']) then num_div[i]:=Div_odd[ord(num_div[i])]
 
-    else num_div[i]:=Div_even[ChrToInt(num_div[i])];
+    else num_div[i]:=Div_even[ord(num_div[i])];
     end;
 
-  if (num_div[2] = '0') then delete(num_div, 1, 1);
+  delete(num_div, 1, byte(num_div[2] = '0'));
 until (num_div = '0');
 
 if (negative) then IntToBin:='-' + IntToBin;
@@ -390,9 +370,9 @@ repeat
 
   for i:=1 to length(dec_mul) - 1 do
     begin
-    if (dec_mul[i + 1] in ['5'..'9']) then dec_mul[i]:=Mul_big[ChrToInt(dec_mul[i])]
+    if (dec_mul[i + 1] in ['5'..'9']) then dec_mul[i]:=Mul_big[ord(dec_mul[i])]
 
-    else dec_mul[i]:=Mul_small[ChrToInt(dec_mul[i])];
+    else dec_mul[i]:=Mul_small[ord(dec_mul[i])];
     end;
 
   delete(dec_mul, RPosSet(['1'..'9'], dec_mul) + 1, i);
@@ -429,9 +409,9 @@ until (dec_mul = '0') or (ask_trunc) and (length(dec_res) - 1 = limit);
 
 if (not ask_trunc) and (dec_mul <> '0') then
   begin
-  writeln(Color(White), '...');
+  write(Color(White), '...');
 
-  write(Color(Red), #13#10'Note: ');
+  write(Color(Red), #13#10#13#10'Note: ');
 
   write(Color(Green), 'Green part ');
 
