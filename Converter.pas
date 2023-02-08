@@ -259,6 +259,8 @@ end;
 //============================ Binary to Decimal ============================//
 
 Procedure BinToDec;
+const mod_10: array [0..19] of char = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                                       '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
 var div_res, dec_sum: ansistring;
     remem: byte;
 begin
@@ -273,7 +275,7 @@ for i:=sep + 1 to length(s) do
 
     for u:=length(dec_sum) downto 1 do
       begin
-      dec_res:=char((ord(div_res[u]) - 48 + ord(dec_sum[u]) - 48 + remem) mod 10 + 48) + dec_res;
+      dec_res:=mod_10[(ord(div_res[u]) - 48 + ord(dec_sum[u]) - 48 + remem)] + dec_res;
 
       remem:=byte(ord(dec_res[1]) - remem < ord(div_res[u]));
       end;
@@ -381,9 +383,9 @@ repeat
     begin
     pre_pos:=Cursor;
 
-    writeln(Color(White), '...');
+    write(Color(White), '...');
 
-    write(Color(Red), #13#10'Warning: ');
+    write(Color(Red), #13#10#13#10'Warning: ');
 
     write(Color(White), 'The converter has been paused'#13#10#13#10'Press any key to ');
 
