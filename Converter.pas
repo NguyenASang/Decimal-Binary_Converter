@@ -321,10 +321,9 @@ end;
 //============================ Decimal to Binary ============================//
 
 Procedure DecToBin(dec_mul: ansistring);
-var compare: ansistring;
+var compare, limit: ansistring;
     split: cardinal;
     pre_pos: coord;
-    limit: variant;
 begin
 if (ask_trunc) then
   begin
@@ -343,7 +342,9 @@ if (ask_trunc) then
 
 if (limit = '0') then exit else write('.');
 
-split:=abs(length(dec_mul) - pos('1', ReverseString(IntToBin(dec_mul))) + 1); dec_res:='.';
+split:=abs(length(dec_mul) - pos('1', ReverseString(IntToBin(dec_mul))) + 1);
+dec_mul:=dec_mul + '0';
+dec_res:='.';
 
 repeat
   if (not ask_trunc) then
@@ -368,7 +369,7 @@ repeat
     dec_res:=dec_res + '0';
     end;
 
-  dec_mul:=dec_mul + '0';
+  delete(dec_mul, length(dec_mul) - 1, byte(dec_mul[length(dec_mul) - 1] = '1'));
 
   for i:=1 to length(dec_mul) - 1 do
     begin
@@ -376,8 +377,6 @@ repeat
 
     else dec_mul[i]:=Mul_small[ord(dec_mul[i])];
     end;
-
-  delete(dec_mul, RPosSet(['1'..'9'], dec_mul) + 1, i);
 
   if (GetAsyncKeyState(27) < 0) and (IsFocus) then
     begin
@@ -407,7 +406,7 @@ repeat
 
     if (not ask_trunc) and (length(dec_res) - 1 >= split) then Color(Green);
     end;
-until (dec_mul = '0') or (ask_trunc) and (length(dec_res) - 1 = limit);
+until (dec_mul = '0') or (ask_trunc) and (length(dec_res) - 1 = StrToInt(limit));
 
 if (not ask_trunc) and (dec_mul <> '0') then
   begin
