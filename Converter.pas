@@ -76,25 +76,18 @@ GetWindowThreadProcessId(GetConsoleWindow, PidConsole);
 IsFocus:=PidFocus = PidConsole;
 end;
 
-Function RPosSet(CharSet: TSysCharSet; str: ansistring): cardinal;
-begin
-for RPosSet:=length(str) downto 1 do
-  begin
-  if (str[RPosSet] in CharSet) then exit;
-  end;
-
-RPosSet:=0;
-end;
-
-Function Format(str: ansistring; CharSet: TSysCharSet; chk_spec, is_clip, is_empty: bool): ansistring;
+Function Format(str: ansistring; chk_spec, is_clip, is_bin: bool): ansistring;
+var regex: string;
 begin
 if (is_clip) then
   begin
-  while ((not chk_spec) or (not is_empty)) and (pos('-', str) > 0) or (Rpos('-', str) > 1) do delete(str, RPos('-', str), 1);
+  if (is_bin) then regex:='[^01\.-]+' else regex:='[^\d\.-]+';
+
+  str:=ReplaceRegExpr(regex, str, '', true);
+
+  while (not chk_spec) and (pos('-', str) > 0) or (Rpos('-', str) > 1) and (str <> '') do delete(str, RPos('-', str), 1);
 
   while ((not chk_spec) or (decimal)) and (pos('.', str) > 0) or (NPos('.', str, 2) > 0) do delete(str, RPos('.', str), 1);
-
-  while (CharSet = ['0', '1']) and (PosSet(['2'..'9'], str) > 0) do delete(str, PosSet(['2'..'9'], str), 1);
 
   exit(str);
   end;
@@ -109,7 +102,7 @@ if (negative) and (str[1] = '0') then negative:=false;
 
 if (chk_spec) and (decimal) then
   begin
-  while (str <> '0') and (decimal) and (str[length(str)] in ['0', '.']) do
+  while (str[length(str)] in ['0', '.']) and (decimal) and (str <> '0') do
     begin
     if (str[length(str)] = '.') then decimal:=false;
 
@@ -120,9 +113,29 @@ if (chk_spec) and (decimal) then
 Format:=str;
 end;
 
-Function PasteClip(CharSet: TSysCharSet; chk_spec, is_empty: bool): ansistring;
-var expr: TRegExpr;
-    data: handle;
+Function Pause(pos: coord; dots: uint8): boolean;
+begin
+write(Color(White), StringOfChar('.', dots));
+
+write(Color(Red), #13#10#13#10'Warning: ');
+
+write(Color(White), 'The converter has been paused'#13#10#13#10'Press any key to ');
+
+write(Color(Green), 'continue ');
+
+write(Color(White), '| Esc to ');
+
+write(Color(Red), 'stop ');
+
+write(Color(White), 'the converter');
+
+Pause:=readkey = #27;
+
+Clear(pos.x + dots, pos.y, Screen.x * 5, pos.x + dots, pos.y);
+end;
+
+Function PasteClip(CharSet: TSysCharSet; chk_spec: bool): ansistring;
+var data: handle;
 begin
 OpenClipboard(0);
 data:=GetClipboardData(CF_TEXT);
@@ -130,7 +143,7 @@ PasteClip:=strpas(GlobalLock(data));
 GlobalUnlock(data);
 CloseClipboard;
 
-PasteClip:=Format(ReplaceRegExpr('[^\d\.-]+', PasteClip, '', true), CharSet, chk_spec, true, is_empty);
+PasteClip:=Format(PasteClip, chk_spec, true, CharSet = ['0'..'1']);
 
 write(PasteClip);
 end;
@@ -190,7 +203,7 @@ repeat
 
   if (key = #22) then
     begin
-    input:=input + PasteClip(CharSet, chk_spec, length(input) = 0);
+    input:=input + PasteClip(CharSet, chk_spec);
 
     decimal:=pos('.', input) > 0;
     negative:=pos('-', input) > 0;
@@ -226,7 +239,7 @@ repeat
   if (key = #27) then exit('');
 until (length(input) > 0) and (key = #13);
 
-input:=Format(input, CharSet, chk_spec, false, false);
+input:=Format(input, chk_spec, false, false);
 
 if (chk_spec) then if (decimal) then sep:=pos('.', input) else sep:=length(input) + 1;
 end;
@@ -246,6 +259,8 @@ for i:=1 to sep - 1 do
     if (BinToInt[u + 1] in ['5'..'9']) then BinToInt[u]:=Mul_big[ord(BinToInt[u])]
 
     else BinToInt[u]:=Mul_small[ord(BinToInt[u])];
+
+    if (GetAsyncKeyState(27) < 0) and (IsFocus) then if (Pause(Cursor, 0)) then exit('');
     end;
 
   BinToInt[u]:=char(ord(BinToInt[u]) - 48 + ord(s[i]));
@@ -288,6 +303,8 @@ for i:=sep + 1 to length(s) do
     if (div_res[u - 1] in ['1', '3', '5', '7', '9']) then div_res[u]:=Div_odd[ord(div_res[u])]
 
     else div_res[u]:=Div_even[ord(div_res[u])];
+
+    if (GetAsyncKeyState(27) < 0) and (IsFocus) then if (Pause(Cursor, 3)) then exit;
     end;
   end;
 
@@ -313,6 +330,8 @@ repeat
     end;
 
   delete(num_div, 1, byte(num_div[2] = '0'));
+
+  if (GetAsyncKeyState(27) < 0) and (IsFocus) then if (Pause(Cursor, 0)) then exit('');
 until (num_div = '0');
 
 if (negative) then IntToBin:='-' + IntToBin;
@@ -333,7 +352,7 @@ if (ask_trunc) then
 
   writeln('How many digits do you want to display ?');
 
-  limit:=Format(Input(['0'..'9'], false), ['0'..'9'], false, false, false);
+  limit:=Format(Input(['0'..'9'], false), false, false, false);
 
   Clear(0, pre_pos.y, Screen.x * (Screen.y - pre_pos.y), 0, pre_pos.y);
 
@@ -380,31 +399,9 @@ repeat
 
   if (GetAsyncKeyState(27) < 0) and (IsFocus) then
     begin
-    pre_pos:=Cursor;
+    if (Pause(Cursor, 3)) then exit
 
-    write(Color(White), '...');
-
-    write(Color(Red), #13#10#13#10'Warning: ');
-
-    write(Color(White), 'The converter has been paused'#13#10#13#10'Press any key to ');
-
-    write(Color(Green), 'continue ');
-
-    write(Color(White), '| Esc to ');
-
-    write(Color(Red), 'stop ');
-
-    write(Color(White), 'the converter');
-
-    if (readkey = #27) then
-      begin
-      Clear(pre_pos.x + 3, pre_pos.y, Screen.x * 5, pre_pos.x + 3, pre_pos.y);
-      exit;
-      end;
-
-    Clear(pre_pos.x, pre_pos.y, Screen.x * 5, pre_pos.x, pre_pos.y);
-
-    if (not ask_trunc) and (length(dec_res) - 1 >= split) then Color(Green);
+    else if (not ask_trunc) and (length(dec_res) - 1 >= split) then Color(Green);
     end;
 until (dec_mul = '0') or (ask_trunc) and (length(dec_res) - 1 = StrToInt(limit));
 
