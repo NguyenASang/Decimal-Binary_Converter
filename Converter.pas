@@ -256,7 +256,7 @@ for i:=1 to sep - 1 do
 
   for u:=1 to length(BinToInt) - 1 do
     begin
-    if (BinToInt[u + 1] in ['5'..'9']) then BinToInt[u]:=Mul_big[ord(BinToInt[u])]
+    if (ord(BinToInt[u + 1]) > 52) then BinToInt[u]:=Mul_big[ord(BinToInt[u])]
 
     else BinToInt[u]:=Mul_small[ord(BinToInt[u])];
 
@@ -300,7 +300,7 @@ for i:=sep + 1 to length(s) do
 
   for u:=length(div_res) - 1 downto 2 do
     begin
-    if (div_res[u - 1] in ['1', '3', '5', '7', '9']) then div_res[u]:=Div_odd[ord(div_res[u])]
+    if (ord(div_res[u - 1]) and 1 = 1) then div_res[u]:=Div_odd[ord(div_res[u])]
 
     else div_res[u]:=Div_even[ord(div_res[u])];
 
@@ -320,11 +320,11 @@ begin
 num_div:='0' + num_div; IntToBin:='';
 
 repeat
-  IntToBin:=char(ord(num_div[length(num_div)]) mod 2 + 48) + IntToBin;
+  IntToBin:=char(ord(num_div[length(num_div)]) and 1 + 48) + IntToBin;
 
   for i:=length(num_div) downto 2 do
     begin
-    if (num_div[i - 1] in ['1', '3', '5', '7', '9']) then num_div[i]:=Div_odd[ord(num_div[i])]
+    if (ord(num_div[i - 1]) and 1 = 1) then num_div[i]:=Div_odd[ord(num_div[i])]
 
     else num_div[i]:=Div_even[ord(num_div[i])];
     end;
@@ -392,7 +392,7 @@ repeat
 
   for i:=1 to length(dec_mul) - 1 do
     begin
-    if (dec_mul[i + 1] in ['5'..'9']) then dec_mul[i]:=Mul_big[ord(dec_mul[i])]
+    if (ord(dec_mul[i + 1]) > 52) then dec_mul[i]:=Mul_big[ord(dec_mul[i])]
 
     else dec_mul[i]:=Mul_small[ord(dec_mul[i])];
     end;
