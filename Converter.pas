@@ -16,6 +16,19 @@ var auto_copy, ask_trunc, decimal, negative: bool;
 
 //====================== Alternative functions for Crt ======================//
 
+Function Color(attr: byte): string;
+begin
+SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), attr);
+Color:='';
+end;
+
+Function Screen: coord;
+var size: TConsoleScreenBufferInfo;
+begin
+GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), size);
+Screen:=size.dwSize;
+end;
+
 Function Cursor: coord;
 var pos: TConsoleScreenBufferInfo;
 begin
@@ -30,31 +43,6 @@ pos.x:=x; pos.y:=y;
 SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 end;
 
-Function Color(attr: byte): string;
-begin
-SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), attr);
-Color:='';
-end;
-
-Function Readkey: char;
-var k: TKeyEvent;
-begin
-InitKeyBoard;
-k:=TranslateKeyEvent(GetKeyEvent);
-Readkey:=GetKeyEventChar(k);
-
-//Catch Ctrl + V
-if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then readkey:=#22;
-DoneKeyBoard;
-end;
-
-Function Screen: coord;
-var size: TConsoleScreenBufferInfo;
-begin
-GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), size);
-Screen:=size.dwSize;
-end;
-
 Procedure Clear(x, y, area, des_x, des_y: cardinal);
 var written: dword;
     pos: coord;
@@ -65,25 +53,29 @@ FillConsoleOutputCharacter(GetStdHandle(STD_OUTPUT_HANDLE), ' ', area, pos, writ
 GotoXY(des_x, des_y);
 end;
 
-//=========================== Utilities functions ===========================//
-
-Function IsFocus: bool;
-var PidConsole, PidFocus: dword;
+Function Readkey: char;
+var key: TKeyEvent;
 begin
-GetWindowThreadProcessId(GetForegroundWindow, PidFocus);
-GetWindowThreadProcessId(GetConsoleWindow, PidConsole);
+InitKeyBoard;
 
-IsFocus:=PidFocus = PidConsole;
+key:=TranslateKeyEvent(GetKeyEvent);
+Readkey:=GetKeyEventChar(key);
+
+//Catch Ctrl + V
+if (GetAsyncKeyState(VK_CONTROL) < 0) and (GetAsyncKeyState(86) < 0) then readkey:=#22;
+
+DoneKeyBoard;
 end;
 
+//=========================== Utilities functions ===========================//
+
 Function Format(str: ansistring; chk_spec, is_clip, is_bin: bool): ansistring;
-var regex: string;
 begin
 if (is_clip) then
   begin
-  if (is_bin) then regex:='[^01\.-]+' else regex:='[^\d\.-]+';
+  if (is_bin) then Format:='[^01\.-]+' else Format:='[^\d\.-]+';
 
-  str:=ReplaceRegExpr(regex, str, '', true);
+  str:=ReplaceRegExpr(Format, str, '', true);
 
   while (not chk_spec) and (pos('-', str) > 0) or (Rpos('-', str) > 1) and (str <> '') do delete(str, RPos('-', str), 1);
 
@@ -113,44 +105,9 @@ if (chk_spec) and (decimal) then
 Format:=str;
 end;
 
-Function Pause(pos: coord; dots: uint8): boolean;
-begin
-write(Color(White), StringOfChar('.', dots));
-
-write(Color(Red), #13#10#13#10'Warning: ');
-
-write(Color(White), 'The converter has been paused'#13#10#13#10'Press any key to ');
-
-write(Color(Green), 'continue ');
-
-write(Color(White), '| Esc to ');
-
-write(Color(Red), 'stop ');
-
-write(Color(White), 'the converter');
-
-Pause:=readkey = #27;
-
-Clear(pos.x + dots, pos.y, Screen.x * 5, pos.x + dots, pos.y);
-end;
-
-Function PasteClip(CharSet: TSysCharSet; chk_spec: bool): ansistring;
-var data: handle;
-begin
-OpenClipboard(0);
-data:=GetClipboardData(CF_TEXT);
-PasteClip:=strpas(GlobalLock(data));
-GlobalUnlock(data);
-CloseClipboard;
-
-PasteClip:=Format(PasteClip, chk_spec, true, CharSet = ['0'..'1']);
-
-write(PasteClip);
-end;
-
 Procedure CopyClip(text: ansistring);
 var PchData, StrData: pchar;
-    data: handle;
+    data: hglobal;
 begin
 StrData:=Pchar(text);
 data:=GlobalAlloc(GMEM_MOVEABLE, length(StrData) + 1);
@@ -172,9 +129,53 @@ write(Color(Yellow), 'Copied');
 GotoXY(52, Cursor.y + 2);
 end;
 
+Function PasteClip(CharSet: TSysCharSet; chk_spec: bool): ansistring;
+var data: hglobal;
+begin
+OpenClipboard(0);
+data:=GetClipboardData(CF_TEXT);
+PasteClip:=strpas(GlobalLock(data));
+GlobalUnLock(data);
+CloseClipboard;
+
+PasteClip:=Format(PasteClip, chk_spec, true, CharSet = ['0'..'1']);
+
+write(PasteClip);
+end;
+
+Function Pause(pos: coord; dots: uint8): bool;
+begin
+write(Color(White), StringOfChar('.', dots));
+
+write(Color(Red), #13#10#13#10'Warning: ');
+
+write(Color(White), 'The converter has been paused'#13#10#13#10'Press any key to ');
+
+write(Color(Green), 'continue ');
+
+write(Color(White), '| Esc to ');
+
+write(Color(Red), 'stop ');
+
+write(Color(White), 'the converter');
+
+Pause:=readkey = #27;
+
+Clear(pos.x + dots, pos.y, Screen.x * 5, pos.x + dots, pos.y);
+end;
+
 Function HandlerRoutine(CtrlType: dword): bool; stdcall;
 begin
 if (num_res <> '') and (CtrlType = CTRL_C_EVENT) then CopyClip(num_res + dec_res);
+end;
+
+Function IsFocus: bool;
+var PidConsole, PidFocus: dword;
+begin
+GetWindowThreadProcessId(GetForegroundWindow, PidFocus);
+GetWindowThreadProcessId(GetConsoleWindow, PidConsole);
+
+IsFocus:=PidFocus = PidConsole;
 end;
 
 Function NewTerm: bool;
