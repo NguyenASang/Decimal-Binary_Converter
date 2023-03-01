@@ -105,14 +105,13 @@ if (chk_spec) and (decimal) then
 Format:=str;
 end;
 
-Procedure CopyClip(text: ansistring);
-var PchData, StrData: pchar;
+Procedure CopyClip(text: pchar);
+var PchData: pchar;
     data: hglobal;
 begin
-StrData:=Pchar(text);
-data:=GlobalAlloc(GMEM_MOVEABLE, length(StrData) + 1);
+data:=GlobalAlloc(GMEM_MOVEABLE, length(text) + 1);
 PchData:=GlobalLock(data);
-strcopy(PchData, LPCSTR(StrData));
+strcopy(PchData, LPCSTR(text));
 GlobalUnlock(data);
 
 Openclipboard(0);
@@ -166,7 +165,7 @@ end;
 
 Function HandlerRoutine(CtrlType: dword): bool; stdcall;
 begin
-if (num_res <> '') and (CtrlType = CTRL_C_EVENT) then CopyClip(num_res + dec_res);
+if (num_res <> '') and (CtrlType = CTRL_C_EVENT) then CopyClip(Pchar(num_res + dec_res));
 end;
 
 Function IsFocus: bool;
@@ -371,23 +370,10 @@ repeat
     begin
     if (compare = dec_mul) then break;
 
-    if (length(dec_res) - 1 = split) then
-      begin
-      Color(Green);
-      compare:=dec_mul;
-      end;
+    if (length(dec_res) - 1 = split) then compare:=dec_mul;
     end;
 
-  if (dec_mul[1] in ['5'..'9']) then
-    begin
-    write(1);
-    dec_res:=dec_res + '1';
-    end
-
-  else begin
-    write(0);
-    dec_res:=dec_res + '0';
-    end;
+  if (dec_mul[1] in ['5'..'9']) then dec_res:=dec_res + '1' else dec_res:=dec_res + '0';
 
   delete(dec_mul, length(dec_mul) - 1, byte(dec_mul[length(dec_mul) - 1] = '1'));
 
@@ -408,6 +394,10 @@ until (dec_mul = '0') or (ask_trunc) and (length(dec_res) - 1 = StrToInt(limit))
 
 if (not ask_trunc) and (dec_mul <> '0') then
   begin
+  write(Copy(dec_res, 2, split));
+
+  write(Color(Green), Copy(dec_res, split + 2 + byte(split = length(dec_res) - 2), length(dec_res)));
+
   write(Color(White), '...');
 
   write(Color(Red), #13#10#13#10'Note: ');
@@ -434,12 +424,12 @@ write(Color(Red), 'return ');
 
 write(Color(White), 'to main menu');
 
-if (auto_copy) then CopyClip(num_res + dec_res);
+if (auto_copy) then CopyClip(Pchar(num_res + dec_res));
 
 repeat
   key:=readkey;
 
-  if (key = #3) then CopyClip(num_res + dec_res);
+  if (key = #3) then CopyClip(Pchar(num_res + dec_res));
 until (key in [#27, #8]);
 end;
 
