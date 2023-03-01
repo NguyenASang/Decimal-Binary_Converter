@@ -375,7 +375,7 @@ repeat
 
   if (dec_mul[1] in ['5'..'9']) then dec_res:=dec_res + '1' else dec_res:=dec_res + '0';
 
-  delete(dec_mul, length(dec_mul) - 1, byte(dec_mul[length(dec_mul) - 1] = '1'));
+  delete(dec_mul, length(dec_mul) - 1, byte(dec_mul[length(dec_mul) - 1] = '0'));
 
   for i:=1 to length(dec_mul) - 1 do
     begin
@@ -392,12 +392,16 @@ repeat
     end;
 until (dec_mul = '0') or (ask_trunc) and (length(dec_res) - 1 = StrToInt(limit));
 
-if (not ask_trunc) and (dec_mul <> '0') then
-  begin
+if (ask_trunc) and (dec_mul <> '0') then write(Copy(dec_res, 2, StrToInt(limit)))
+
+else begin
   write(Copy(dec_res, 2, split));
 
   write(Color(Green), Copy(dec_res, split + 2 + byte(split = length(dec_res) - 2), length(dec_res)));
+  end;
 
+if (not ask_trunc) and (dec_mul <> '0') then
+  begin
   write(Color(White), '...');
 
   write(Color(Red), #13#10#13#10'Note: ');
