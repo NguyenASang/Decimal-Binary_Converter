@@ -226,7 +226,7 @@ repeat
     else begin
       GotoXY(Screen.x - 1, Cursor.y - 1);
       write(' ');
-      GotoXY(Screen.x - 1, Cursor.y);
+      GotoXY(Screen.x - 1, Cursor.y - 1);
       end;
 
     if (input[length(input)] = '.') then decimal:=false;
