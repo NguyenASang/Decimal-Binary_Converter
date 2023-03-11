@@ -19,6 +19,7 @@ var auto_copy, ask_trunc, decimal, negative: bool;
 Function Color(attr: byte): string;
 begin
 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), attr);
+
 Color:='';
 end;
 
@@ -69,42 +70,6 @@ end;
 
 //=========================== Utilities functions ===========================//
 
-Function Format(str: ansistring; chk_spec, is_clip, is_bin: bool): ansistring;
-begin
-if (is_clip) then
-  begin
-  if (is_bin) then Format:='[^01\.-]+' else Format:='[^\d\.-]+';
-
-  str:=ReplaceRegExpr(Format, str, '', true);
-
-  while (not chk_spec) and (pos('-', str) > 0) or (Rpos('-', str) > 1) and (str <> '') do delete(str, RPos('-', str), 1);
-
-  while ((not chk_spec) or (decimal)) and (pos('.', str) > 0) or (NPos('.', str, 2) > 0) do delete(str, RPos('.', str), 1);
-
-  exit(str);
-  end;
-
-if (chk_spec) and (negative) then delete(str, 1, 1);
-
-if (str = '') or (str[1] = '.') then str:='0' + str;
-
-while (str <> '') and ((str[1] in ['0', '.']) and (str <> '0') and ((str[2] <> '.') or (not decimal))) do delete(str, 1, 1);
-
-if (negative) and (str[1] = '0') then negative:=false;
-
-if (chk_spec) and (decimal) then
-  begin
-  while (str[length(str)] in ['0', '.']) and (decimal) and (str <> '0') do
-    begin
-    if (str[length(str)] = '.') then decimal:=false;
-
-    delete(str, length(str), 1);
-    end;
-  end;
-
-Format:=str;
-end;
-
 Procedure CopyClip(text: pchar);
 var PchData: pchar;
     data: hglobal;
@@ -128,7 +93,7 @@ write(Color(Yellow), 'Copied');
 GotoXY(52, Cursor.y + 2);
 end;
 
-Function PasteClip(CharSet: TSysCharSet; chk_spec: bool): ansistring;
+Function PasteClip: ansistring;
 var data: hglobal;
 begin
 OpenClipboard(0);
@@ -136,10 +101,6 @@ data:=GetClipboardData(CF_TEXT);
 PasteClip:=strpas(GlobalLock(data));
 GlobalUnLock(data);
 CloseClipboard;
-
-PasteClip:=Format(PasteClip, chk_spec, true, CharSet = ['0'..'1']);
-
-write(PasteClip);
 end;
 
 Function Pause(pos: coord; dots: uint8): bool;
@@ -195,6 +156,7 @@ end;
 //=============================== Check input ===============================//
 
 Function Input(CharSet: TSysCharSet; chk_spec: bool): ansistring;
+var regex, str: ansistring;
 begin
 input:='';
 
@@ -203,20 +165,32 @@ repeat
 
   if (key = #22) then
     begin
-    input:=input + PasteClip(CharSet, chk_spec);
+    str:=PasteClip;
 
-    decimal:=pos('.', input) > 0;
-    negative:=pos('-', input) > 0;
+    if (CharSet = ['0', '1']) then regex:='[^01\.-]+' else regex:='[^\d\.-]+';
+
+    str:=ReplaceRegExpr(regex, str, '', true);
+
+    while (NPos('-', str, 2 - byte(decimal or negative or not chk_spec or (str[1] <> '-'))) > 0) do delete(str, RPos('-', str), 1);
+
+    while (NPos('.', str, 1 + byte(not decimal)) > 0) do delete(str, RPos('.', str), 1);
+
+    write(str);
+
+    input:=input + str;
+
+    decimal:=(pos('.', str) > 0) or (decimal);
+    negative:=(pos('-', str) > 0) or (negative);
     end;
 
-  if (key in CharSet) or (chk_spec) and ((key = '-') and (input = '') or (key = '.') and (not decimal)) then
+  if (key in CharSet) or (chk_spec) and ((input + key = '-') or (key = '.') and (not decimal)) then
     begin
     write(key);
 
     input:=input + key;
 
-    negative:=(key = '-') or (negative);
     decimal:=(key = '.') or (decimal);
+    negative:=(key = '-') or (negative);
     end;
 
   if (key = #8) and (length(input) > 0) then
@@ -239,7 +213,23 @@ repeat
   if (key = #27) then exit('');
 until (length(input) > 0) and (key = #13);
 
-input:=Format(input, chk_spec, false, false);
+if (chk_spec) and (negative) then delete(input, 1, 1);
+
+if (input = '') or (input[1] = '.') then input:='0' + input;
+
+while (input <> '') and ((input[1] in ['0', '.']) and (input <> '0') and ((input[2] <> '.') or (not decimal))) do delete(input, 1, 1);
+
+if (negative) and (input[1] = '0') then negative:=false;
+
+if (chk_spec) and (decimal) then
+  begin
+  while (input[length(input)] in ['0', '.']) and (decimal) and (input <> '0') do
+    begin
+    if (input[length(input)] = '.') then decimal:=false;
+
+    delete(input, length(input), 1);
+    end;
+  end;
 
 if (chk_spec) then if (decimal) then sep:=pos('.', input) else sep:=length(input) + 1;
 end;
@@ -352,7 +342,7 @@ if (ask_trunc) then
 
   writeln('How many digits do you want to display ?');
 
-  limit:=Format(Input(['0'..'9'], false), false, false, false);
+  limit:=Input(['0'..'9'], false);
 
   Clear(0, pre_pos.y, Screen.x * (Screen.y - pre_pos.y), 0, pre_pos.y);
 
