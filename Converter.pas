@@ -171,7 +171,7 @@ repeat
 
     str:=ReplaceRegExpr(regex, str, '', true);
 
-    while (NPos('-', str, 2 - byte(decimal or negative or not chk_spec or (str[1] <> '-'))) > 0) do delete(str, RPos('-', str), 1);
+    while (PosEx('-', str, 1 + byte(chk_spec and (input = ''))) > 0) do delete(str, RPos('-', str), 1);
 
     while (NPos('.', str, 1 + byte(not decimal)) > 0) do delete(str, RPos('.', str), 1);
 
@@ -217,7 +217,7 @@ if (chk_spec) and (negative) then delete(input, 1, 1);
 
 if (input = '') or (input[1] = '.') then input:='0' + input;
 
-while (input <> '') and ((input[1] in ['0', '.']) and (input <> '0') and ((input[2] <> '.') or (not decimal))) do delete(input, 1, 1);
+while (input <> '0') and (input[1] = '0') and (input[2] <> '.') do delete(input, 1, 1);
 
 if (negative) and (input[1] = '0') then negative:=false;
 
@@ -307,19 +307,19 @@ end;
 
 Function IntToBin(num_div: ansistring): ansistring;
 begin
-num_div:='0' + num_div; IntToBin:='';
+num_div:=ReverseString(num_div) + '0'; IntToBin:='';
 
 repeat
-  IntToBin:=char(ord(num_div[length(num_div)]) and 1 + 48) + IntToBin;
+  IntToBin:=char(ord(num_div[1]) and 1 + 48) + IntToBin;
 
-  for i:=length(num_div) downto 2 do
+  for i:=1 to length(num_div) - 1 do
     begin
-    if (ord(num_div[i - 1]) and 1 = 1) then num_div[i]:=Div_odd[ord(num_div[i])]
+    if (ord(num_div[i + 1]) and 1 = 1) then num_div[i]:=Div_odd[ord(num_div[i])]
 
     else num_div[i]:=Div_even[ord(num_div[i])];
     end;
 
-  delete(num_div, 1, byte(num_div[2] = '0'));
+  delete(num_div, i, byte(num_div[i] = '0'));
 
   if (GetAsyncKeyState(27) < 0) and (IsFocus) then if (Pause(Cursor, 0)) then exit('');
 until (num_div = '0');
