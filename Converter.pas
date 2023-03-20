@@ -1,16 +1,16 @@
 uses jwapsapi, keyboard, regexpr, strutils, sysutils, windows;
 
-const Div_even  : array [48..57] of char = ('0', '0', '1', '1', '2', '2', '3', '3', '4', '4');
-      Div_odd   : array [48..57] of char = ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9');
-      Mul_big   : array [48..57] of char = ('1', '3', '5', '7', '9', '1', '3', '5', '7', '9');
-      Mul_small : array [48..57] of char = ('0', '2', '4', '6', '8', '0', '2', '4', '6', '8');
-      Green     = $2;
-      Red       = $4;
-      White     = $7;
-      Yellow    = $E;
+const Div_2  : array [0..1, 48..57] of char = (('0', '0', '1', '1', '2', '2', '3', '3', '4', '4'),
+                                               ('5', '5', '6', '6', '7', '7', '8', '8', '9', '9'));
+      Mul_2  : array [0..1, 48..57] of char = (('0', '2', '4', '6', '8', '0', '2', '4', '6', '8'),
+                                               ('1', '3', '5', '7', '9', '1', '3', '5', '7', '9'));
+      Green  = $2;
+      Red    = $4;
+      White  = $7;
+      Yellow = $E;
 
-var auto_copy, ask_trunc, decimal, negative: bool;
-    s, num_res, dec_res: ansistring;
+var auto_copy, ask_trunc, decimal, negative: boolean;
+    s, num_res, dec_res, result: ansistring;
     i, u, sep: cardinal;
     key: char;
 
@@ -103,9 +103,9 @@ GlobalUnLock(data);
 CloseClipboard;
 end;
 
-Function Pause(pos: coord; dots: uint8): bool;
+Function Pause(pos: coord): boolean;
 begin
-write(Color(White), StringOfChar('.', dots));
+write(Color(White), '...');
 
 write(Color(Red), #13#10#13#10'Warning: ');
 
@@ -121,15 +121,15 @@ write(Color(White), 'the converter');
 
 Pause:=readkey = #27;
 
-Clear(pos.x + dots, pos.y, Screen.x * 5, pos.x + dots, pos.y);
+Clear(pos.x + byte(Pause) * 3, pos.y, Screen.x * 5, pos.x + byte(Pause) * 3, pos.y);
 end;
 
-Function HandlerRoutine(CtrlType: dword): bool; stdcall;
+Function HandlerRoutine(CtrlType: dword): winbool; stdcall;
 begin
 if (num_res <> '') and (CtrlType = CTRL_C_EVENT) then CopyClip(Pchar(num_res + dec_res));
 end;
 
-Function IsFocus: bool;
+Function IsFocus: boolean;
 var PidConsole, PidFocus: dword;
 begin
 GetWindowThreadProcessId(GetForegroundWindow, PidFocus);
@@ -138,7 +138,7 @@ GetWindowThreadProcessId(GetConsoleWindow, PidConsole);
 IsFocus:=PidFocus = PidConsole;
 end;
 
-Function NewTerm: bool;
+Function NewTerm: boolean;
 var path: ansistring;
     proc: handle;
     pid: dword;
@@ -155,10 +155,10 @@ end;
 
 //=============================== Check input ===============================//
 
-Function Input(CharSet: TSysCharSet; chk_spec: bool): ansistring;
+Function Input(CharSet: TSysCharSet; chk_spec: boolean): ansistring;
 var regex, str: ansistring;
 begin
-input:='';
+Input:='';
 
 repeat
   key:=readkey;
@@ -171,29 +171,29 @@ repeat
 
     str:=ReplaceRegExpr(regex, str, '', true);
 
-    while (PosEx('-', str, 1 + byte(chk_spec and (input = ''))) > 0) do delete(str, RPos('-', str), 1);
+    while (PosEx('-', str, 1 + byte(chk_spec and (Input = ''))) > 0) do delete(str, RPos('-', str), 1);
 
     while (NPos('.', str, 1 + byte(not decimal)) > 0) do delete(str, RPos('.', str), 1);
 
     write(str);
 
-    input:=input + str;
+    Input:=Input + str;
 
     decimal:=(pos('.', str) > 0) or (decimal);
     negative:=(pos('-', str) > 0) or (negative);
     end;
 
-  if (key in CharSet) or (chk_spec) and ((input + key = '-') or (key = '.') and (not decimal)) then
+  if (key in CharSet) or (chk_spec) and ((Input + key = '-') or (key = '.') and (not decimal)) then
     begin
     write(key);
 
-    input:=input + key;
+    Input:=Input + key;
 
     decimal:=(key = '.') or (decimal);
     negative:=(key = '-') or (negative);
     end;
 
-  if (key = #8) and (length(input) > 0) then
+  if (key = #8) and (length(Input) > 0) then
     begin
     if (Cursor.x > 0) then write(#8, ' ', #8)
 
@@ -203,35 +203,35 @@ repeat
       GotoXY(Screen.x - 1, Cursor.y - 1);
       end;
 
-    if (input[length(input)] = '.') then decimal:=false;
+    if (Input[length(Input)] = '.') then decimal:=false;
 
-    if (input[length(input)] = '-') then negative:=false;
+    if (Input[length(Input)] = '-') then negative:=false;
 
-    delete(input, length(input), 1);
+    delete(Input, length(Input), 1);
     end;
 
   if (key = #27) then exit('');
-until (length(input) > 0) and (key = #13);
+until (length(Input) > 0) and (key = #13);
 
-if (chk_spec) and (negative) then delete(input, 1, 1);
+if (chk_spec) and (negative) then delete(Input, 1, 1);
 
-if (input = '') or (input[1] = '.') then input:='0' + input;
+if (Input = '') or (Input[1] = '.') then Input:='0' + Input;
 
-while (input <> '0') and (input[1] = '0') and (input[2] <> '.') do delete(input, 1, 1);
+while (Input <> '0') and (Input[1] = '0') and (Input[2] <> '.') do delete(Input, 1, 1);
 
-if (negative) and (input[1] = '0') then negative:=false;
+if (negative) and (Input[1] = '0') then negative:=false;
 
 if (chk_spec) and (decimal) then
   begin
-  while (input[length(input)] in ['0', '.']) and (decimal) and (input <> '0') do
+  while (Input[length(Input)] in ['0', '.']) and (decimal) and (Input <> '0') do
     begin
-    if (input[length(input)] = '.') then decimal:=false;
+    if (Input[length(Input)] = '.') then decimal:=false;
 
-    delete(input, length(input), 1);
+    delete(Input, length(Input), 1);
     end;
   end;
 
-if (chk_spec) then if (decimal) then sep:=pos('.', input) else sep:=length(input) + 1;
+if (chk_spec) then if (decimal) then sep:=pos('.', Input) else sep:=length(Input) + 1;
 end;
 
 //============================ Binary to Integer ============================//
@@ -242,18 +242,13 @@ BinToInt:='00';
 
 for i:=1 to sep - 1 do
   begin
-  if (BinToInt[1] in ['5'..'9']) then BinToInt:='0' + BinToInt;
+  BinToInt:=StringOfChar('0', byte(BinToInt[1] in ['5'..'9'])) + BinToInt;
 
-  for u:=1 to length(BinToInt) - 1 do
-    begin
-    if (ord(BinToInt[u + 1]) > 52) then BinToInt[u]:=Mul_big[ord(BinToInt[u])]
-
-    else BinToInt[u]:=Mul_small[ord(BinToInt[u])];
-
-    if (GetAsyncKeyState(27) < 0) and (IsFocus) then if (Pause(Cursor, 0)) then exit('');
-    end;
+  for u:=1 to length(BinToInt) - 1 do BinToInt[u]:=Mul_2[byte(ord(BinToInt[u + 1]) > 52), ord(BinToInt[u])];
 
   BinToInt[u]:=char(ord(BinToInt[u]) - 48 + ord(s[i]));
+
+  if (GetAsyncKeyState(27) < 0) and (IsFocus) then if (Pause(Cursor)) then exit('');
   end;
 
 delete(BinToInt, u + 1, 1);
@@ -263,39 +258,33 @@ end;
 
 //============================ Binary to Decimal ============================//
 
-Procedure BinToDec;
+Function BinToDec: ansistring;
 const mod_10: array [0..19] of char = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                                        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
 var div_res, dec_sum: ansistring;
-    remem: byte;
+    remem: byte = 0;
 begin
-div_res:='05';
+dec_res:='00'; div_res:='05';
 
 for i:=sep + 1 to length(s) do
   begin
   if (s[i] = '1') then
     begin
-    remem:=0;
-    dec_sum:=dec_res + StringOfChar('0', length(div_res) - length(dec_sum)); dec_res:='';
+    dec_sum:=dec_res; dec_res:=div_res;
 
     for u:=length(dec_sum) downto 1 do
       begin
-      dec_res:=mod_10[(ord(div_res[u]) - 48 + ord(dec_sum[u]) - 48 + remem)] + dec_res;
+      dec_res[u]:=mod_10[(ord(div_res[u]) - 48 + ord(dec_sum[u]) - 48 + remem)];
 
-      remem:=byte(ord(dec_res[1]) - remem < ord(div_res[u]));
+      remem:=byte(ord(dec_res[u]) < Max(ord(div_res[u]), ord(dec_sum[u])));
       end;
     end;
 
   div_res:=div_res + '5';
 
-  for u:=length(div_res) - 1 downto 2 do
-    begin
-    if (ord(div_res[u - 1]) and 1 = 1) then div_res[u]:=Div_odd[ord(div_res[u])]
+  for u:=length(div_res) - 1 downto 2 do div_res[u]:=Div_2[ord(div_res[u - 1]) and 1, ord(div_res[u])];
 
-    else div_res[u]:=Div_even[ord(div_res[u])];
-
-    if (GetAsyncKeyState(27) < 0) and (IsFocus) then if (Pause(Cursor, 3)) then exit;
-    end;
+  if (GetAsyncKeyState(27) < 0) and (IsFocus) then if (Pause(Cursor)) then exit;
   end;
 
 dec_res[1]:='.';
@@ -312,16 +301,11 @@ num_div:=ReverseString(num_div) + '0'; IntToBin:='';
 repeat
   IntToBin:=char(ord(num_div[1]) and 1 + 48) + IntToBin;
 
-  for i:=1 to length(num_div) - 1 do
-    begin
-    if (ord(num_div[i + 1]) and 1 = 1) then num_div[i]:=Div_odd[ord(num_div[i])]
-
-    else num_div[i]:=Div_even[ord(num_div[i])];
-    end;
+  for i:=1 to length(num_div) - 1 do num_div[i]:=Div_2[ord(num_div[i + 1]) and 1, ord(num_div[i])];
 
   delete(num_div, i, byte(num_div[i] = '0'));
 
-  if (GetAsyncKeyState(27) < 0) and (IsFocus) then if (Pause(Cursor, 0)) then exit('');
+  if (GetAsyncKeyState(27) < 0) and (IsFocus) then if (Pause(Cursor)) then exit('');
 until (num_div = '0');
 
 if (negative) then IntToBin:='-' + IntToBin;
@@ -329,7 +313,7 @@ end;
 
 //============================ Decimal to Binary ============================//
 
-Procedure DecToBin(dec_mul: ansistring);
+Function DecToBin(dec_mul: ansistring): ansistring;
 var compare, limit: ansistring;
     split: cardinal;
     pre_pos: coord;
@@ -367,31 +351,25 @@ repeat
 
   delete(dec_mul, length(dec_mul) - 1, byte(dec_mul[length(dec_mul) - 1] = '0'));
 
-  for i:=1 to length(dec_mul) - 1 do
-    begin
-    if (ord(dec_mul[i + 1]) > 52) then dec_mul[i]:=Mul_big[ord(dec_mul[i])]
-
-    else dec_mul[i]:=Mul_small[ord(dec_mul[i])];
-    end;
+  for i:=1 to length(dec_mul) - 1 do dec_mul[i]:=Mul_2[byte(ord(dec_mul[i + 1]) > 52), ord(dec_mul[i])];
 
   if (GetAsyncKeyState(27) < 0) and (IsFocus) then
     begin
-    if (Pause(Cursor, 3)) then exit
+    if (Pause(Cursor)) then exit;
 
-    else if (not ask_trunc) and (length(dec_res) - 1 >= split) then Color(Green);
+    if (not ask_trunc) and (length(dec_res) - 1 >= split) then Color(Green);
     end;
 until (dec_mul = '0') or (ask_trunc) and (length(dec_res) - 1 = StrToInt(limit));
 
-if (ask_trunc) and (dec_mul <> '0') then write(Copy(dec_res, 2, StrToInt(limit)))
+if (ask_trunc) then write(Copy(dec_res, 2, Min(StrToInt(limit), length(dec_res) - 2)))
 
 else begin
   write(Copy(dec_res, 2, split));
 
-  write(Color(Green), Copy(dec_res, split + 2 + byte(split = length(dec_res) - 2), length(dec_res)));
-  end;
+  if (dec_mul = '0') then exit;
 
-if (not ask_trunc) and (dec_mul <> '0') then
-  begin
+  write(Color(Green), Copy(dec_res, split + 2 + byte(split = length(dec_res) - 2), length(dec_res)));
+
   write(Color(White), '...');
 
   write(Color(Red), #13#10#13#10'Note: ');
