@@ -156,7 +156,7 @@ end;
 //=============================== Check input ===============================//
 
 Function Input(CharSet: TSysCharSet; chk_spec: boolean): ansistring;
-var regex, str: ansistring;
+var str: ansistring;
 begin
 Input:='';
 
@@ -165,11 +165,7 @@ repeat
 
   if (key = #22) then
     begin
-    str:=PasteClip;
-
-    if (CharSet = ['0', '1']) then regex:='[^01\.-]+' else regex:='[^\d\.-]+';
-
-    str:=ReplaceRegExpr(regex, str, '', true);
+    str:=ReplaceRegExpr('[^01' + DupeString('\d', 1 - byte(CharSet = ['0', '1'])) + '\.-]+', PasteClip, '', true);
 
     while (PosEx('-', str, 1 + byte(chk_spec and (Input = ''))) > 0) do delete(str, RPos('-', str), 1);
 
@@ -264,19 +260,19 @@ const mod_10: array [0..19] of char = ('0', '1', '2', '3', '4', '5', '6', '7', '
 var div_res, dec_sum: ansistring;
     remem: byte = 0;
 begin
-dec_res:='00'; div_res:='05';
+BinToDec:=StringOfChar('0', 1 + byte(sep < length(s))); div_res:='05';
 
 for i:=sep + 1 to length(s) do
   begin
   if (s[i] = '1') then
     begin
-    dec_sum:=dec_res; dec_res:=div_res;
+    dec_sum:=BinToDec; BinToDec:=div_res;
 
     for u:=length(dec_sum) downto 1 do
       begin
-      dec_res[u]:=mod_10[(ord(div_res[u]) - 48 + ord(dec_sum[u]) - 48 + remem)];
+      BinToDec[u]:=mod_10[(ord(div_res[u]) - 48 + ord(dec_sum[u]) - 48 + remem)];
 
-      remem:=byte(ord(dec_res[u]) < Max(ord(div_res[u]), ord(dec_sum[u])));
+      remem:=byte(ord(BinToDec[u]) < Max(ord(div_res[u]), ord(dec_sum[u])));
       end;
     end;
 
@@ -287,9 +283,7 @@ for i:=sep + 1 to length(s) do
   if (GetAsyncKeyState(27) < 0) and (IsFocus) then if (Pause(Cursor)) then exit;
   end;
 
-dec_res[1]:='.';
-
-write(dec_res);
+BinToDec[1]:=(''[0] + StringOfChar('.', byte(BinToDec <> '0')))[1 + byte(BinToDec <> '0')];
 end;
 
 //============================ Integer to Binary ============================//
@@ -330,24 +324,24 @@ if (ask_trunc) then
 
   Clear(0, pre_pos.y, Screen.x * (Screen.y - pre_pos.y), 0, pre_pos.y);
 
-  write('Convert to binary:'#13#10, num_res);
+  write('Convert to binary:'#13#10, result);
   end;
 
-if (limit = '0') then exit else write('.');
+if (limit = '0') or (dec_mul = '') then exit;
 
 split:=abs(length(dec_mul) - pos('1', ReverseString(IntToBin(dec_mul))) + 1);
 dec_mul:=dec_mul + '0';
-dec_res:='.';
+DecToBin:='.';
 
 repeat
   if (not ask_trunc) then
     begin
     if (compare = dec_mul) then break;
 
-    if (length(dec_res) - 1 = split) then compare:=dec_mul;
+    if (length(DecToBin) - 1 = split) then compare:=dec_mul;
     end;
 
-  if (dec_mul[1] in ['5'..'9']) then dec_res:=dec_res + '1' else dec_res:=dec_res + '0';
+  if (dec_mul[1] in ['5'..'9']) then DecToBin:=DecToBin + '1' else DecToBin:=DecToBin + '0';
 
   delete(dec_mul, length(dec_mul) - 1, byte(dec_mul[length(dec_mul) - 1] = '0'));
 
@@ -357,18 +351,24 @@ repeat
     begin
     if (Pause(Cursor)) then exit;
 
-    if (not ask_trunc) and (length(dec_res) - 1 >= split) then Color(Green);
+    if (not ask_trunc) and (length(DecToBin) - 1 >= split) then Color(Green);
     end;
-until (dec_mul = '0') or (ask_trunc) and (length(dec_res) - 1 = StrToInt(limit));
+until (dec_mul = '00') or (ask_trunc) and (length(DecToBin) - 1 = StrToInt(limit));
 
-if (ask_trunc) then write(Copy(dec_res, 2, Min(StrToInt(limit), length(dec_res) - 2)))
+if (ask_trunc) then
+  begin
+  DecToBin:=Copy(DecToBin, 1, Min(length(DecToBin), StrToInt(limit) + 1));
 
-else begin
-  write(Copy(dec_res, 2, split));
+  write(DecToBin);
 
-  if (dec_mul = '0') then exit;
+  exit;
+  end;
 
-  write(Color(Green), Copy(dec_res, split + 2 + byte(split = length(dec_res) - 2), length(dec_res)));
+write(Copy(DecToBin, 1, split + 1));
+
+if (dec_mul <> '00') then
+  begin
+  write(Color(Green), Copy(DecToBin, split + 2, length(DecToBin)));
 
   write(Color(White), '...');
 
@@ -396,12 +396,12 @@ write(Color(Red), 'return ');
 
 write(Color(White), 'to main menu');
 
-if (auto_copy) then CopyClip(Pchar(num_res + dec_res));
+if (auto_copy) then CopyClip(Pchar(result));
 
 repeat
   key:=readkey;
 
-  if (key = #3) then CopyClip(Pchar(num_res + dec_res));
+  if (key = #3) then CopyClip(Pchar(result));
 until (key in [#27, #8]);
 end;
 
@@ -436,16 +436,15 @@ write(Color(White), '  _______________________________________________________'#
 write(Color(White), '  Press key to choose option or Esc key to Exit: ');
 
 repeat
-  if (key = #8) then
-    begin
+  if (key <> #8) then key:=readkey
+
+  else begin
     Clear(0, 0, Screen.x * Screen.y, 0, 0);
 
     if (u = 0) then key:='1' else key:='2';
 
     u:=0;
-    end
-
-  else key:=readkey;
+    end;
 
   case key of
     '1': begin
@@ -459,11 +458,11 @@ repeat
 
          writeln(#13#10#13#10'Convert to binary: ');
 
-         num_res:=IntToBin(Copy(s, 1, sep - 1));
+         result:=IntToBin(Copy(s, 1, sep - 1));
 
-         if (not ask_trunc) or (not decimal) then write(num_res);
+         if (not ask_trunc) then write(result);
 
-         if (decimal) then DecToBin(Copy(s, sep + 1, length(s)));
+         result:=result + DecToBin(Copy(s, sep + 1, length(s)));
 
          End_Screen;
 
@@ -481,11 +480,9 @@ repeat
 
          writeln(#13#10#13#10'Convert to decimal: ');
 
-         num_res:=BinToInt;
+         result:=BinToInt + BinToDec;
 
-         write(num_res);
-
-         if (decimal) then BinToDec;
+         write(result);
 
          End_Screen;
 
