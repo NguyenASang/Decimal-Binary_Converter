@@ -10,7 +10,7 @@ const Div_2  : array [0..1, 48..57] of char = (('0', '0', '1', '1', '2', '2', '3
       Yellow = $E;
 
 var auto_copy, ask_trunc, decimal, negative: boolean;
-    s, num_res, dec_res, result: ansistring;
+    s, result: ansistring;
     i, u, sep: cardinal;
     key: char;
 
@@ -126,7 +126,7 @@ end;
 
 Function HandlerRoutine(CtrlType: dword): winbool; stdcall;
 begin
-if (num_res <> '') and (CtrlType = CTRL_C_EVENT) then CopyClip(Pchar(num_res + dec_res));
+if (result <> '') and (CtrlType = CTRL_C_EVENT) then CopyClip(Pchar(result));
 end;
 
 Function IsFocus: boolean;
@@ -327,7 +327,7 @@ if (ask_trunc) then
   write('Convert to binary:'#13#10, result);
   end;
 
-if (limit = '0') or (dec_mul = '') then exit;
+if (limit = '0') or (limit = '') and (ask_trunc) or (dec_mul = '') then exit;
 
 split:=abs(length(dec_mul) - pos('1', ReverseString(IntToBin(dec_mul))) + 1);
 dec_mul:=dec_mul + '0';
@@ -396,12 +396,10 @@ write(Color(Red), 'return ');
 
 write(Color(White), 'to main menu');
 
-if (auto_copy) then CopyClip(Pchar(result));
-
 repeat
-  key:=readkey;
+  if (not auto_copy) then key:=readkey else auto_copy:=false;
 
-  if (key = #3) then CopyClip(Pchar(result));
+  if (key = #3) xor (auto_copy) then CopyClip(Pchar(result));
 until (key in [#27, #8]);
 end;
 
@@ -557,7 +555,7 @@ if (NewTerm) then
 
 repeat
   decimal:=false; negative:=false;
-  num_res:=''; dec_res:='';
+  result:='';
 
   Main_menu;
 until (false);
